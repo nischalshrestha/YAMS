@@ -1,11 +1,16 @@
 
+
 var elem = document.getElementById('draw-shapes');
 
 // BASICS
 //create a synth and connect it to the master output (your speakers)
 var synth = new Tone.Synth().toMaster();
 //play a middle 'C' for the duration of an 8th note
-synth.triggerAttackRelease("C2", "8n");
+synth.triggerAttackRelease(261.63, "8n");
+// synth.triggerAttackRelease("C4", "8n");
+
+
+// console.log(mode('C', 'ionian'));
 // Note: since synth is an instrument you can't keep it playing indefinitely
 // like you could with a audio Source
 /*

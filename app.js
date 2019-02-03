@@ -4,6 +4,7 @@ const app = express()
 const port = 8000
 
 app.use(express.static(__dirname));
+
 app.get('/', (req, res) =>  {
     res.sendFile(path.join(__dirname, '/views', 'play.html'))
 })
