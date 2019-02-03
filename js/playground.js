@@ -1,3 +1,4 @@
+
 var elem = document.getElementById('draw-shapes');
 
 // BASICS
@@ -7,7 +8,6 @@ var synth = new Tone.Synth().toMaster();
 synth.triggerAttackRelease("C2", "8n");
 // Note: since synth is an instrument you can't keep it playing indefinitely
 // like you could with a audio Source
-
 /*
 // SCHEDULING
 //schedule a series of notes, one per second
