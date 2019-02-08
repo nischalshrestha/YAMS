@@ -1,14 +1,13 @@
 
 
-var elem = document.getElementById('draw-shapes');
-
 // BASICS
 //create a synth and connect it to the master output (your speakers)
 var synth = new Tone.Synth().toMaster();
 //play a middle 'C' for the duration of an 8th note
-synth.triggerAttackRelease(261.63, "8n");
-// synth.triggerAttackRelease("C4", "8n");
+// synth.triggerAttackRelease(261.63, "8n");
+synth.triggerAttackRelease("C4", "8n");
 
+// console.log(new OmniOscillator());
 
 // console.log(mode('C', 'ionian'));
 // Note: since synth is an instrument you can't keep it playing indefinitely
@@ -211,9 +210,8 @@ noise.volume.linearRampToValueAtTime(-Infinity, 3)
 */
 
 // SHAPES 
-
 // Make an instance of two and place it on the page.
-// var elem = document.getElementById('draw-shapes');
+var elem = document.getElementById('draw-shapes');
 var params = { width: 285, height: 200 };
 // var two = new Two(params).appendTo(document.body);
 var two = new Two(params).appendTo(elem);   

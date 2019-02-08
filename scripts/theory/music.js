@@ -121,14 +121,25 @@ var initFrequencyTable = function () {
 initFrequencyTable();
 
 var isNote = function (name) {
-    return NOTES.includes(name);
+    return NOTES.includes(name.toUpperCase());
 }
 
 var isMode = function (name) {
-    return MODES[name] != undefined;
+    return MODES[name.toUpperCase()] != undefined;
 }
 
 var mode = function (root, name) {
     if (isNote(root) == false) return "not a valid root note!"
     if (isMode(name) == false) return "not a valid mode!"
+}
+
+var chromatic = function(root) {
+    // Returns the chromatic notes given the root note
+    root = root.toUpperCase();
+    let notes = SHARP_NOTES.includes(root) ? SHARP_NOTES : FLAT_NOTES;
+    let start = notes.indexOf(root);
+    let array1 = notes.slice(start);
+    let array2 = notes.slice(0, start);
+    const array3 = [...array1, ...array2];
+    return array3
 }
