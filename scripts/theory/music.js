@@ -97,6 +97,7 @@ var halfStepsFromTo = function(noteList, a, b) {
     return (bIdx - aIdx);
 }
 
+var keySet; // used to find index of the note + octave representation
 var frequencyTable; // holds the frequency table for equal-tempered scale
 /**
  * Initializes the frequencyTable for future reference
@@ -111,14 +112,19 @@ var initFrequencyTable = function () {
             noteList.push(SHARP_NOTES[n]+i);
         }
     }
+    keySet = [];
+    frequencyTable = [];
     const f_0 = 440; // we'll chose A4 as f0
     const a = Math.pow(2, 1/12); // 12th root of 2
     for (var i = 0; i < noteList.length; i++) {
-        var f = f_0 * Math.pow(a, halfStepsFromTo(noteList, "A4", noteList[i]));
-        frequencyTable[noteList[i]] = f.toFixed(2);
+        // formula for equal tempered scale
+        let f = f_0 * Math.pow(a, halfStepsFromTo(noteList, "A4", noteList[i]));
+        keySet.push(noteList[i]);
+        frequencyTable.push(f);
     }
 }
 initFrequencyTable();
+// console.log(frequencyTable);
 
 var isNote = function (name) {
     return NOTES.includes(name.toUpperCase());
@@ -133,13 +139,20 @@ var mode = function (root, name) {
     if (isMode(name) == false) return "not a valid mode!"
 }
 
-var chromatic = function(root) {
+var getChromaticFrequenciesFrom = function(root, octave) {
+    let rootIdx = keySet.indexOf(root+octave);
+    let notes = []
+    for (var i = rootIdx; i < rootIdx+CHROMATIC; i++) {
+        notes.push(frequencyTable[i]);
+    }
+    return notes;
+}
+
+var chromatic = function(root, octave) {
+    let oct = octave || 4;
     // Returns the chromatic notes given the root note
     root = root.toUpperCase();
-    let notes = SHARP_NOTES.includes(root) ? SHARP_NOTES : FLAT_NOTES;
-    let start = notes.indexOf(root);
-    let array1 = notes.slice(start);
-    let array2 = notes.slice(0, start);
-    const array3 = [...array1, ...array2];
-    return array3
+    if (SHARP_NOTES.includes(root) == false) return []
+    let notes = getChromaticFrequenciesFrom(root, oct);
+    return notes
 }
