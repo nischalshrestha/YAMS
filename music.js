@@ -1,3 +1,4 @@
+// TODO: port to Python!
 
 // Declaring all constants
 const OCTAVE = 8;
