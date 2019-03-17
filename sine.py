@@ -23,15 +23,15 @@ def generate_wave(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
 
 sine_wave = generate_wave(freq=440, amp=0.9)
 
-start_offset = 0
 def callback(in_data, frame_count, time_info, status):
-    global start_offset # not a fan of global var but works for now
-    end = start_offset + frame_count
-    data = sine_wave[start_offset:end]
-    start_offset += frame_count
+    end = callback.start_offset + frame_count
+    data = sine_wave[callback.start_offset:end]
+    callback.start_offset += frame_count
     # let pyaudio continue calling this function until there's no more data
     # to be read from wave
-    return (data, pyaudio.paContinue)
+    return data, pyaudio.paContinue
+
+callback.start_offset = 0
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
 stream = p.open(format=pyaudio.paFloat32,
