@@ -12,8 +12,8 @@ import time
 # can be generated
 
 p = pyaudio.PyAudio()
-# fr = 44100
-fr = 10000
+fr = 44100
+# fr = 10000
 
 # source: https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L1068
 def normalize(ys, amp=1.0):
@@ -43,6 +43,15 @@ def generate_triangle(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     ys = normalize(unbias(ys), amp)
     return ys.astype(np.float32)
 
+def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
+    # makes sure that amp is within range [0.0, 1.0]
+    amp = max(0, min(1.0, amp))
+    ts = start + np.arange(fr * duration) / fr
+    cycles = freq * ts + offset / 2*np.pi
+    frac, _ = np.modf(cycles)
+    ys = amp * np.sign(unbias(frac))
+    return ys.astype(np.float32)
+
 def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
@@ -51,11 +60,12 @@ def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     # This is the evaluation of the wave given the ts
     phases = 2 * np.pi * freq * ts  + offset
     # generate samples, note conversion to float32 array
-    ys = amp * np.sin(phases).astype(np.float32)
-    return ys
+    ys = amp * np.sin(phases)
+    return ys.astype(np.float32)
 
-sine_wave = generate_sine(freq=200)
-triangle_wave = generate_triangle(freq=200)
+sine_wave = generate_sine(freq=440)
+triangle_wave = generate_triangle(freq=440)
+square_wave = generate_square(freq=40)
 
 def callback(in_data, frame_count, time_info, status):
     end = callback.start_offset + frame_count
@@ -67,7 +77,8 @@ def callback(in_data, frame_count, time_info, status):
 
 callback.start_offset = 0
 # callback.wave = sine_wave
-callback.wave = triangle_wave
+# callback.wave = triangle_wave
+callback.wave = square_wave
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
 stream = p.open(format=pyaudio.paFloat32,
