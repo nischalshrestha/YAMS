@@ -2,10 +2,6 @@ import pyaudio
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
-
-t = np.linspace(0, 1, 500)
-plt.plot(t, signal.sawtooth(2 * np.pi * 5 * t))
-
 import time
 
 # TODO add encapsulation with use of classes once different wave shapes
@@ -63,10 +59,6 @@ def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     ys = amp * np.sin(phases)
     return ys.astype(np.float32)
 
-sine_wave = generate_sine(freq=440)
-triangle_wave = generate_triangle(freq=440)
-square_wave = generate_square(freq=40)
-
 def callback(in_data, frame_count, time_info, status):
     end = callback.start_offset + frame_count
     data = callback.wave[callback.start_offset:end]
@@ -76,14 +68,24 @@ def callback(in_data, frame_count, time_info, status):
     return data, pyaudio.paContinue
 
 callback.start_offset = 0
+
+sine_wave = generate_sine(freq=440)
+triangle_wave = generate_triangle(freq=200)
+square_wave = generate_square(freq=40)
 # callback.wave = sine_wave
 # callback.wave = triangle_wave
-callback.wave = square_wave
+# callback.wave = square_wave
+
+# combinations
+# callback.wave = sine_wave + square_wave
+# callback.wave = sine_wave + triangle_wave
+callback.wave = triangle_wave + square_wave
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
 stream = p.open(format=pyaudio.paFloat32,
                 channels=1,
                 rate=fr,
+                # input=True,
                 output=True,
                 stream_callback=callback)
 
@@ -100,5 +102,5 @@ while stream.is_active():
 
 stream.stop_stream()
 stream.close()
-
 p.terminate()
+
