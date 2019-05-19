@@ -3,10 +3,10 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 import time
+from constants import *
 
 # TODO add encapsulation with use of classes once different wave shapes
 # can be generated
-
 p = pyaudio.PyAudio()
 fr = 44100
 # fr = 10000
@@ -69,17 +69,31 @@ def callback(in_data, frame_count, time_info, status):
 
 callback.start_offset = 0
 
-sine_wave = generate_sine(freq=440)
-triangle_wave = generate_triangle(freq=200)
-square_wave = generate_square(freq=40)
-# callback.wave = sine_wave
+# TODO create functions to calculate some of this (steps, chords, scales etc.)
+# equation for frequency calculation using equal-tempered scale: 
+# fn = f0 * (a)^n, fn = target freq, f0 fixed note (440), a = 2^(1/12)
+root = 440
+# third would be 2 W up meaning 4 half steps
+third = root * (A) ** 4
+# third would be W, W, h, W up meaning 7 half steps
+fifth = root * (A) ** 7
+# generate the audio samples for each note
+sine_wave_root = generate_sine(freq=root)
+sine_wave_third = generate_sine(freq=third)
+sine_wave_fifth = generate_sine(freq=fifth)
+# set callback to the chords which is summation of the 3 notes
+callback.wave = sine_wave_root + sine_wave_third + sine_wave_fifth
+
+# callback.wave = sine_wave 
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
 # combinations
+# triangle_wave = generate_triangle(freq=200)
+# square_wave = generate_square(freq=40)
 # callback.wave = sine_wave + square_wave
 # callback.wave = sine_wave + triangle_wave
-callback.wave = triangle_wave + square_wave
+# callback.wave = triangle_wave + square_wave
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
 stream = p.open(format=pyaudio.paFloat32,
@@ -102,5 +116,4 @@ while stream.is_active():
 
 stream.stop_stream()
 stream.close()
-p.terminate()
 

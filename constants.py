@@ -75,3 +75,5 @@ EQUIVALENTS = {
     # 'Ab': 'G#',
     # 'Bb': 'A#',
 }
+BASE = 440
+A = 2**(1/12)
