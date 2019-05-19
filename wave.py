@@ -11,6 +11,33 @@ p = pyaudio.PyAudio()
 fr = 44100
 # fr = 10000
 
+# https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L795
+def apodize(ys, framerate=44100, denom=20, duration=0.1):
+    """Tapers the amplitude at the beginning and end of the signal.
+    Tapers either the given duration of time or the given
+    fraction of the total duration, whichever is less.
+    ys: wave array
+    framerate: int frames per second
+    denom: float fraction of the segment to taper
+    duration: float duration of the taper in seconds
+    returns: wave array
+    """
+    # a fixed fraction of the segment
+    n = len(ys)
+    k1 = n // denom
+
+    # a fixed duration of time
+    k2 = int(duration * framerate)
+
+    k = min(k1, k2)
+
+    w1 = np.linspace(0, 1, k)
+    w2 = np.ones(n - 2*k)
+    w3 = np.linspace(1, 0, k)
+
+    window = np.concatenate((w1, w2, w3))
+    return ys * window
+
 # source: https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L1068
 def normalize(ys, amp=1.0):
     """Normalizes a wave array so the maximum amplitude is +amp or -amp.
@@ -37,6 +64,7 @@ def generate_triangle(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     frac, _ = np.modf(cycles)
     ys = np.abs(frac - 0.5)
     ys = normalize(unbias(ys), amp)
+    ys = apodize(ys)
     return ys.astype(np.float32)
 
 def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
@@ -75,20 +103,21 @@ def major(root, formula):
     freqs = [root * (A) ** h for h in MAJOR_FORMULA[formula]]
     # generate the audio samples for each note and sum up for chord audio data
     # we need to normalize it to amp (for now just use default 1.0)
-    return normalize(sum([generate_sine(freq=f) for f in freqs]))
+    return normalize(sum([generate_triangle(freq=f) for f in freqs]))
 
 def minor(root, formula):
-    # equation for frequency calculation using equal-tempered scale: 
-    # fn = f0 * (a)^n, fn = target freq, f0 is root, a = 2^(1/12)
     freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
-    # generate the audio samples for each note and sum up for chord audio data
-    # we need to normalize it to amp (for now just use default 1.0)
-    return normalize(sum([generate_sine(freq=f) for f in freqs]))
+    return normalize(sum([generate_triangle(freq=f) for f in freqs]))
+
+def dominant(root, formula):
+    freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
+    return normalize(sum([generate_triangle(freq=f) for f in freqs]))
 
 # set callback to the chords which is summation of the 3 notes
 # testing lower pitch of A4 for now
 # callback.wave = major(440/2, 'maj7/6')
-callback.wave = minor(440/2, 'minmaj7')
+# callback.wave = minor(440/2, 'minmaj7')
+callback.wave = dominant(440/2, '+')
 
 # callback.wave = sine_wave 
 # callback.wave = triangle_wave

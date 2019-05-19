@@ -10,13 +10,12 @@ SCALES = {
 # each mode value stands for the interval to start on for key
 MODES = {
     'ionian': [2, 2, 1, 2, 2, 2, 1],
-    # TODO refactor the rest to be 2 for W and 1 for h
     'dorian': [2, 1, 2, 2, 2, 1, 2],
-    'phrygian': [0.5, 1, 1, 1, 0.5, 1, 1],
-    'lydian': [1, 1, 1, 0.5, 1, 1, 0.5],
-    'mixolydian': [1, 1, 0.5, 1, 1, 0.5, 1],
-    'aeolian': [1, 0.5, 1, 1, 0.5, 1, 1],
-    'locrian': [0.5, 1, 1, 0.5, 1, 1, 1],
+    'phrygian': [1, 2, 2, 2, 1, 2, 2],
+    'lydian': [2, 2, 2, 1, 2, 2, 1],
+    'mixolydian': [2, 2, 1, 2, 2, 1, 2],
+    'aeolian': [2, 1, 2, 2, 1, 2, 2],
+    'locrian': [1, 2, 2, 1, 2, 2, 2],
 }
 
 # these are based on how many half tones needed for 3rd 5th etc.
@@ -45,21 +44,21 @@ MINOR_FORMULA = {
     'minmaj9': [0, 2, 3, 7, 11],
 }
 
-# TODO update these for number of half tone steps like MAJOR_FORMULA
-# Dominants which will receive accidentals by the dominant method below
 DOMINANT_FORMULA = {
-    '7': [1, 3, 5, 7],
-    '7/6': [1, 3, 5, 7, 6],
-    '7/11': [1, 3, 5, 7, 11],
-    '7sus4': [1, 4, 5, 7],
-    '7/6sus4': [1, 4, 5, 7, 6],
-    '9': [1, 3, 5, 7, 9],
-    '11': [1, 3, 5, 7, 9, 11],
-    '13': [1, 3, 5, 7, 9, 13],
-    '7/6/11': [1, 3, 5, 7, 11, 13],
-    '11/13': [1, 3, 5, 7, 9, 11, 13],
-    'dim': [1, 3, 5, 6], 
-    '+': [1, 3, 5],
+    '7': [0, 4, 7, 10],
+    '7/6': [0, 4, 7, 10, 9],
+    '7/11': [0, 4, 7, 10, 17],
+    '7sus4': [0, 5, 7, 10],
+    '7/6sus4': [0, 5, 7, 10, 9], # love this chord!
+    '9': [0, 4, 7, 10, 14],
+    '11': [0, 4, 5, 7, 10],
+    '13': [0, 4, 7, 10, 21],
+    '7/6/11': [0, 4, 10, 9, 17],
+    '11/13': [0, 4, 5, 7, 9, 10],
+    'dim': [0, 3, 6], 
+    'dim7': [0, 3, 6, 9],
+    '+': [0, 4, 8],
+    '+7': [0, 4, 8, 10],
 }
 
 SHARPS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#']
