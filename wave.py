@@ -77,9 +77,18 @@ def major(root, formula):
     # we need to normalize it to amp (for now just use default 1.0)
     return normalize(sum([generate_sine(freq=f) for f in freqs]))
 
+def minor(root, formula):
+    # equation for frequency calculation using equal-tempered scale: 
+    # fn = f0 * (a)^n, fn = target freq, f0 is root, a = 2^(1/12)
+    freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
+    # generate the audio samples for each note and sum up for chord audio data
+    # we need to normalize it to amp (for now just use default 1.0)
+    return normalize(sum([generate_sine(freq=f) for f in freqs]))
+
 # set callback to the chords which is summation of the 3 notes
 # testing lower pitch of A4 for now
-callback.wave = major(440/2, 'maj7/6')
+# callback.wave = major(440/2, 'maj7/6')
+callback.wave = minor(440/2, 'minmaj7')
 
 # callback.wave = sine_wave 
 # callback.wave = triangle_wave

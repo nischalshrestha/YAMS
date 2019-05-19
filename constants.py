@@ -11,7 +11,7 @@ SCALES = {
 MODES = {
     'ionian': [2, 2, 1, 2, 2, 2, 1],
     # TODO refactor the rest to be 2 for W and 1 for h
-    'dorian': [1, 0.5, 1, 1, 1, 0.5, 1],
+    'dorian': [2, 1, 2, 2, 2, 1, 2],
     'phrygian': [0.5, 1, 1, 1, 0.5, 1, 1],
     'lydian': [1, 1, 1, 0.5, 1, 1, 0.5],
     'mixolydian': [1, 1, 0.5, 1, 1, 0.5, 1],
@@ -32,20 +32,17 @@ MAJOR_FORMULA = {
     'maj13': [0, 4, 7, 11, 14, 21],
 }
 
-# TODO update these for number of half tone steps like MAJOR_FORMULA
-# This is the basic formula but the 3rd and 7th will receive flat accidental
-# by the minor method below
 MINOR_FORMULA = {
-    'min': [1, 3, 5],
-    'min6': [1, 3, 5, 6],
-    'min7': [1, 3, 5, 7],
-    'min9': [1, 3, 5, 7, 9],
-    'min11': [1, 3, 5, 7, 9, 11],
-    'min7/11': [1, 3, 5, 7, 11],
-    'minadd9': [1, 3, 5, 9],
-    'min6/9': [1, 3, 5, 6, 9],
-    'minmaj7': [1, 3, 5, 7],
-    'minmaj9': [1, 3, 5, 7, 9],
+    'min': [0, 3, 7],
+    'min6': [0, 3, 7, 9],
+    'min7': [0, 3, 7, 10],
+    'min9': [0, 3, 7, 10, 14],
+    'min11': [0, 3, 7, 10, 14, 17],
+    'min7/11': [0, 3, 7, 10, 17],
+    'minadd9': [0, 3, 7, 14],
+    'min9/9': [0, 3, 7, 9, 14],
+    'minmaj7': [0, 3, 7, 11],
+    'minmaj9': [0, 2, 3, 7, 11],
 }
 
 # TODO update these for number of half tone steps like MAJOR_FORMULA
