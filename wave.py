@@ -69,20 +69,17 @@ def callback(in_data, frame_count, time_info, status):
 
 callback.start_offset = 0
 
-# TODO create functions to calculate some of this (steps, chords, scales etc.)
-# equation for frequency calculation using equal-tempered scale: 
-# fn = f0 * (a)^n, fn = target freq, f0 fixed note (440), a = 2^(1/12)
-root = 440
-# third would be 2 W up meaning 4 half steps
-third = root * (A) ** 4
-# third would be W, W, h, W up meaning 7 half steps
-fifth = root * (A) ** 7
-# generate the audio samples for each note
-sine_wave_root = generate_sine(freq=root)
-sine_wave_third = generate_sine(freq=third)
-sine_wave_fifth = generate_sine(freq=fifth)
+def major(root, formula):
+    # equation for frequency calculation using equal-tempered scale: 
+    # fn = f0 * (a)^n, fn = target freq, f0 is root, a = 2^(1/12)
+    freqs = [root * (A) ** h for h in MAJOR_FORMULA[formula]]
+    # generate the audio samples for each note and sum up for chord audio data
+    # we need to normalize it to amp (for now just use default 1.0)
+    return normalize(sum([generate_sine(freq=f) for f in freqs]))
+
 # set callback to the chords which is summation of the 3 notes
-callback.wave = sine_wave_root + sine_wave_third + sine_wave_fifth
+# testing lower pitch of A4 for now
+callback.wave = major(440/2, 'maj7/6')
 
 # callback.wave = sine_wave 
 # callback.wave = triangle_wave
