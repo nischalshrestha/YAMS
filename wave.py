@@ -3,6 +3,7 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 import time
+
 from constants import *
 
 # TODO add encapsulation with use of classes once different wave shapes
@@ -25,16 +26,12 @@ def apodize(ys, framerate=44100, denom=20, duration=0.1):
     # a fixed fraction of the segment
     n = len(ys)
     k1 = n // denom
-
     # a fixed duration of time
     k2 = int(duration * framerate)
-
     k = min(k1, k2)
-
     w1 = np.linspace(0, 1, k)
     w2 = np.ones(n - 2*k)
     w3 = np.linspace(1, 0, k)
-
     window = np.concatenate((w1, w2, w3))
     return ys * window
 
@@ -93,6 +90,7 @@ def callback(in_data, frame_count, time_info, status):
     callback.start_offset += frame_count
     # let pyaudio continue calling this function until there's no more data
     # to be read from wave
+    # TODO need to figure a continuous loop style as well for indefinite duration
     return data, pyaudio.paContinue
 
 callback.start_offset = 0
@@ -117,7 +115,10 @@ def dominant(root, formula):
 # testing lower pitch of A4 for now
 # callback.wave = major(440/2, 'maj7/6')
 # callback.wave = minor(440/2, 'minmaj7')
-callback.wave = dominant(440/2, '+')
+first = major(440/2, 'maj7/6')
+second = major(100, 'maj7')
+dom = dominant(440/2, '7/6sus4')
+# callback.wave = dominant(440/2, '7/6sus4')
 
 # callback.wave = sine_wave 
 # callback.wave = triangle_wave
@@ -131,23 +132,51 @@ callback.wave = dominant(440/2, '+')
 # callback.wave = triangle_wave + square_wave
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
+# stream = p.open(format=pyaudio.paFloat32,
+#                 channels=1,
+#                 rate=fr,
+#                 # input=True,
+#                 output=True,
+#                 stream_callback=callback)
+# non-blocking
+# start the stream
+# stream.start_stream()
+# # wait for stream to finish because the audio playing is non-blocking
+# while stream.is_active():
+#     time.sleep(0.01)
+
+# for paFloat32 sample values must be in range [-1.0, 1.0]
 stream = p.open(format=pyaudio.paFloat32,
                 channels=1,
                 rate=fr,
                 # input=True,
-                output=True,
-                stream_callback=callback)
+                output=True)
 
-# blocking version uses this and removes the stream_callback parameter in open()
-# stream.write(sine_wave)
-# stream.write(triangle_wave)
+# blocking version
+# the tobytes() is required due to pyaudio conversion of numpy	    
+# https://stackoverflow.com/a/48454913/9193847
 
-# non-blocking
-# start the stream
-stream.start_stream()
-# wait for stream to finish because the audio playing is non-blocking
-while stream.is_active():
-    time.sleep(0.1)
+# TODO fix this to allow any key press
+from pynput import keyboard
+
+class MyException(Exception): pass
+
+def on_press(key):
+    if key == keyboard.Key.esc:
+        raise MyException(key)
+    stream.write(dom.tobytes())
+
+# Collect events until released
+with keyboard.Listener(
+        on_press=on_press) as listener:
+    try:
+        listener.join()
+    except MyException as e:
+        print('{0} was pressed'.format(e.args[0]))
+
+# while True:
+    # stream.write(dom.tobytes())
+    # stream.write(first.tobytes())
 
 stream.stop_stream()
 stream.close()
