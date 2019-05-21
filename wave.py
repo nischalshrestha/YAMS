@@ -1,9 +1,17 @@
+#!/usr/bin/env python3
+# ^ this is required for capturing key events
+# you need to also give script executable right and run with sudo
+
+"""
+For now, this file is a playground for generating sounds
+"""
+
 import pyaudio
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 import time
-
+import sys
 from constants import *
 
 # TODO add encapsulation with use of classes once different wave shapes
@@ -53,7 +61,7 @@ def unbias(ys):
     """
     return ys - ys.mean()
 
-def generate_triangle(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
+def generate_triangle(freq=440, duration=1, start=0, offset=0, amp=1.0):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
     ts = start + np.arange(fr * duration) / fr
@@ -115,9 +123,6 @@ def dominant(root, formula):
 # testing lower pitch of A4 for now
 # callback.wave = major(440/2, 'maj7/6')
 # callback.wave = minor(440/2, 'minmaj7')
-first = major(440/2, 'maj7/6')
-second = major(100, 'maj7')
-dom = dominant(440/2, '7/6sus4')
 # callback.wave = dominant(440/2, '7/6sus4')
 
 # callback.wave = sine_wave 
@@ -151,33 +156,43 @@ stream = p.open(format=pyaudio.paFloat32,
                 rate=fr,
                 # input=True,
                 output=True)
+# can just play things sequentially for now
+# TODO implement schedular to be able to play things with any spacing / time signature
+# first = major(440/2, 'maj7/6')
+# dom = dominant(440/2, '7/6sus4')
+# stream.write(dom.tobytes())
+# stream.write(first.tobytes())
 
 # blocking version
 # the tobytes() is required due to pyaudio conversion of numpy	    
 # https://stackoverflow.com/a/48454913/9193847
 
-# TODO fix this to allow any key press
+def clean_up():
+    # stream.stop_stream()
+    stream.close()
+
+# playing with keyboard events
 from pynput import keyboard
 
-class MyException(Exception): pass
-
-def on_press(key):
-    if key == keyboard.Key.esc:
-        raise MyException(key)
-    stream.write(dom.tobytes())
-
-# Collect events until released
-with keyboard.Listener(
-        on_press=on_press) as listener:
+def on_press(key):    
     try:
-        listener.join()
-    except MyException as e:
-        print('{0} was pressed'.format(e.args[0]))
-
-# while True:
-    # stream.write(dom.tobytes())
-    # stream.write(first.tobytes())
-
-stream.stop_stream()
-stream.close()
+        print('alphanumeric key {0} pressed'.format(
+            key.char))
+        if key.char == 'q':
+            clean_up()
+            sys.exit(0)
+        elif (key.char.upper()+'0') in TABLE:
+            note = key.char.upper()+'3'
+            chord = major(TABLE[note], 'maj6')
+            stream.write(chord.tobytes())
+    except AttributeError:
+        pass
+ 
+def on_release(key):
+    print('Key {} released.'.format(key))
+ 
+with keyboard.Listener(
+    on_press = on_press,
+    on_release = on_release) as listener:
+    listener.join()
 
