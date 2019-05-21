@@ -8,3 +8,5 @@ Modular Synthesis in Python using pyaudio.
 - PyAudio
 - PortAudio 
 - NumPy
+- SciPy
+- pynput
