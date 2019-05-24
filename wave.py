@@ -103,21 +103,21 @@ def callback(in_data, frame_count, time_info, status):
 
 callback.start_offset = 0
 
-def major(root, formula):
+def major(root, formula, time):
     # equation for frequency calculation using equal-tempered scale: 
     # fn = f0 * (a)^n, fn = target freq, f0 is root, a = 2^(1/12)
     freqs = [root * (A) ** h for h in MAJOR_FORMULA[formula]]
     # generate the audio samples for each note and sum up for chord audio data
     # we need to normalize it to amp (for now just use default 1.0)
-    return normalize(sum([generate_triangle(freq=f) for f in freqs]))
+    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
-def minor(root, formula):
+def minor(root, formula, time):
     freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
-    return normalize(sum([generate_triangle(freq=f) for f in freqs]))
+    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
-def dominant(root, formula):
+def dominant(root, formula, time):
     freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
-    return normalize(sum([generate_triangle(freq=f) for f in freqs]))
+    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
 # set callback to the chords which is summation of the 3 notes
 # testing lower pitch of A4 for now
@@ -183,7 +183,7 @@ def on_press(key):
             sys.exit(0)
         elif (key.char.upper()+'0') in TABLE:
             note = key.char.upper()+'3'
-            chord = major(TABLE[note], 'maj6')
+            chord = major(TABLE[note], 'maj6', 0.2)
             stream.write(chord.tobytes())
     except AttributeError:
         pass
