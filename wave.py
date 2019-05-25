@@ -61,6 +61,18 @@ def unbias(ys):
     """
     return ys - ys.mean()
 
+def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
+    # makes sure that amp is within range [0.0, 1.0]
+    amp = max(0, min(1.0, amp))
+    # framerate is the # samples per second so we divide each second by fr
+    ts = start + np.arange(fr * duration) / fr
+    # This is the evaluation of the wave given the ts
+    phases = 2 * np.pi * freq * ts  + offset
+    # generate samples, note conversion to float32 array
+    ys = amp * np.sin(phases)
+    ys = apodize(ys)
+    return ys.astype(np.float32)
+
 def generate_triangle(freq=440, duration=1, start=0, offset=0, amp=1.0):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
@@ -79,17 +91,15 @@ def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     cycles = freq * ts + offset / 2*np.pi
     frac, _ = np.modf(cycles)
     ys = amp * np.sign(unbias(frac))
+    ys = apodize(ys)
     return ys.astype(np.float32)
 
-def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
-    # makes sure that amp is within range [0.0, 1.0]
-    amp = max(0, min(1.0, amp))
-    # framerate is the # samples per second so we divide each second by fr
+def generate_sawtooth(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     ts = start + np.arange(fr * duration) / fr
-    # This is the evaluation of the wave given the ts
-    phases = 2 * np.pi * freq * ts  + offset
-    # generate samples, note conversion to float32 array
-    ys = amp * np.sin(phases)
+    cycles = freq * ts + offset / 2*np.pi
+    frac, _ = np.modf(cycles)
+    ys = normalize(unbias(frac), amp)
+    ys = apodize(ys)
     return ys.astype(np.float32)
 
 def callback(in_data, frame_count, time_info, status):
@@ -109,7 +119,7 @@ def major(root, formula, time):
     freqs = [root * (A) ** h for h in MAJOR_FORMULA[formula]]
     # generate the audio samples for each note and sum up for chord audio data
     # we need to normalize it to amp (for now just use default 1.0)
-    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
+    return normalize(sum([generate_sawtooth(freq=f, duration=1.0) for f in freqs]))
 
 def minor(root, formula, time):
     freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
@@ -171,7 +181,7 @@ def clean_up():
     # stream.stop_stream()
     stream.close()
 
-# playing with keyboard events
+# playing with keyboard events; for now it makes it easy to debug sounds
 from pynput import keyboard
 
 def on_press(key):    
