@@ -64,13 +64,13 @@ def unbias(ys):
 def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
-    # framerate is the # samples per second so we divide each second by fr
+    # # framerate is the # samples per second so we divide each second by fr
     ts = start + np.arange(fr * duration) / fr
-    # This is the evaluation of the wave given the ts
+    # # This is the evaluation of the wave given the ts
     phases = 2 * np.pi * freq * ts  + offset
     # generate samples, note conversion to float32 array
     ys = amp * np.sin(phases)
-    ys = apodize(ys)
+    # ys = apodize(ys)
     return ys.astype(np.float32)
 
 def generate_triangle(freq=440, duration=1, start=0, offset=0, amp=1.0):
@@ -135,7 +135,21 @@ def dominant(root, formula, time):
 # callback.wave = minor(440/2, 'minmaj7')
 # callback.wave = dominant(440/2, '7/6sus4')
 
-# callback.wave = sine_wave 
+# weird alien ship pulse effect
+# the end-start is how many modulations to do
+# the amount is the wobbly-ness (TODO investigate the weird pulses at the ends of cycles)
+# TODO allowing UI to control these parameters
+def phase_off(start=0, end=3, freq=440, off=0, amount=3, duration=10.0):
+    summation = generate_sine(freq, duration)
+    for i in range(start, end):
+        freq += amount
+        summation += generate_sine(freq, duration)
+    return normalize(summation)
+
+sines = phase_off(freq=440)
+# print(sines)
+
+callback.wave = sines
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
@@ -147,25 +161,25 @@ def dominant(root, formula, time):
 # callback.wave = triangle_wave + square_wave
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
-# stream = p.open(format=pyaudio.paFloat32,
-#                 channels=1,
-#                 rate=fr,
-#                 # input=True,
-#                 output=True,
-#                 stream_callback=callback)
-# non-blocking
-# start the stream
-# stream.start_stream()
-# # wait for stream to finish because the audio playing is non-blocking
-# while stream.is_active():
-#     time.sleep(0.01)
-
-# for paFloat32 sample values must be in range [-1.0, 1.0]
 stream = p.open(format=pyaudio.paFloat32,
                 channels=1,
                 rate=fr,
                 # input=True,
-                output=True)
+                output=True,
+                stream_callback=callback)
+# non-blocking
+# start the stream
+stream.start_stream()
+# wait for stream to finish because the audio playing is non-blocking
+while stream.is_active():
+    time.sleep(0.01)
+
+# for paFloat32 sample values must be in range [-1.0, 1.0]
+# stream = p.open(format=pyaudio.paFloat32,
+                # channels=1,
+                # rate=fr,
+                # input=True,
+                # output=True)
 # can just play things sequentially for now
 # TODO implement schedular to be able to play things with any spacing / time signature
 # first = major(440/2, 'maj7/6')
@@ -178,31 +192,33 @@ stream = p.open(format=pyaudio.paFloat32,
 # https://stackoverflow.com/a/48454913/9193847
 
 def clean_up():
-    # stream.stop_stream()
+    stream.stop_stream()
     stream.close()
 
-# playing with keyboard events; for now it makes it easy to debug sounds
-from pynput import keyboard
+# # playing with keyboard events; for now it makes it easy to debug sounds
+# from pynput import keyboard
 
-def on_press(key):    
-    try:
-        print('alphanumeric key {0} pressed'.format(
-            key.char))
-        if key.char == 'q':
-            clean_up()
-            sys.exit(0)
-        elif (key.char.upper()+'0') in TABLE:
-            note = key.char.upper()+'3'
-            chord = major(TABLE[note], 'maj6', 0.2)
-            stream.write(chord.tobytes())
-    except AttributeError:
-        pass
+# def on_press(key):    
+#     try:
+#         print('alphanumeric key {0} pressed'.format(
+#             key.char))
+#         if key.char == 'q':
+#             clean_up()
+#             sys.exit(0)
+#         elif (key.char.upper()+'0') in TABLE:
+#             note = key.char.upper()+'3'
+#             chord = major(TABLE[note], 'maj6', 0.2)
+#             note = sine_table
+#             stream.write(chord.tobytes())
+#     except AttributeError:
+#         pass
  
-def on_release(key):
-    print('Key {} released.'.format(key))
+# def on_release(key):
+#     print('Key {} released.'.format(key))
  
-with keyboard.Listener(
-    on_press = on_press,
-    on_release = on_release) as listener:
-    listener.join()
+# with keyboard.Listener(
+#     on_press = on_press,
+#     on_release = on_release) as listener:
+#     listener.join()
 
+clean_up()
