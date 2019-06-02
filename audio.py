@@ -9,7 +9,9 @@ For now, this file is a playground for generating sounds
 import pyaudio
 import numpy as np
 from scipy import signal
+from scipy.io import wavfile
 import matplotlib.pyplot as plt
+
 import time
 import sys
 from constants import *
@@ -19,6 +21,8 @@ from constants import *
 p = pyaudio.PyAudio()
 fr = 44100
 # fr = 10000
+WAVE_OUTPUT_FILENAME = "output.wav"
+CHANNELS = 1
 
 # https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L795
 def apodize(ys, framerate=44100, denom=20, duration=0.1):
@@ -70,7 +74,7 @@ def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     phases = 2 * np.pi * freq * ts  + offset
     # generate samples, note conversion to float32 array
     ys = amp * np.sin(phases)
-    # ys = apodize(ys)
+    ys = apodize(ys)
     return ys.astype(np.float32)
 
 def generate_triangle(freq=440, duration=1, start=0, offset=0, amp=1.0):
@@ -111,6 +115,7 @@ def callback(in_data, frame_count, time_info, status):
     # TODO need to figure a continuous loop style as well for indefinite duration
     return data, pyaudio.paContinue
 
+callback.times = 0
 callback.start_offset = 0
 
 def major(root, formula, time):
@@ -135,21 +140,50 @@ def dominant(root, formula, time):
 # callback.wave = minor(440/2, 'minmaj7')
 # callback.wave = dominant(440/2, '7/6sus4')
 
+# for paFloat32 sample values must be in range [-1.0, 1.0]
+stream = p.open(format=pyaudio.paFloat32,
+                channels=1,
+                rate=fr,
+                # input=True,
+                output=True)
+
 # weird alien ship pulse effect
 # the end-start is how many modulations to do
 # the amount is the wobbly-ness (TODO investigate the weird pulses at the ends of cycles)
+# there is a relationship btw the number of modulations with the amount to modulate by
 # TODO allowing UI to control these parameters
-def phase_off(start=0, end=3, freq=440, off=0, amount=3, duration=10.0):
+def phase_off(start=0, end=3, freq=440, off=0, amount=1, duration=0.05, amp=1.0):
     summation = generate_sine(freq, duration)
     for i in range(start, end):
         freq += amount
-        summation += generate_sine(freq, duration)
-    return normalize(summation)
+        summation += generate_sine(freq, duration, offset=off)
+    return normalize(summation, amp)
 
-sines = phase_off(freq=440)
-# print(sines)
+def write_wave(file_path, wave):
+    wavfile.write(file_path, fr, wave)
 
-callback.wave = sines
+sample = []
+for i in range(1, 441):
+    print('Hz:', i)
+    sine = phase_off(freq=220, amount=i/2, off=i/2)
+    sine2 = phase_off(freq=i, amount=i/3)
+    if i >= 50:
+        sine3 = generate_triangle(i, duration=0.05, amp=i*.001, offset=i/3)
+        # we need to extend otherwise we would just have a 0 duration audio
+        sample.extend((sine + sine2 + sine3).tolist())
+        stream.write((sine + sine2 + sine3).tobytes())
+    else:
+        sample.extend((sine + sine2).tolist())
+        stream.write((sine+sine2).tobytes())
+
+sine4 = phase_off(freq=440, end=3, amount=13, duration=0.5)
+stream.write(sine4.tobytes())
+sample.extend(sine4.tolist())
+write_wave(WAVE_OUTPUT_FILENAME, np.array(sample))
+print('Successfully written to', WAVE_OUTPUT_FILENAME+'! :)')
+
+# stream.write(sine.tobytes())
+# callback.wave = sines
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
@@ -161,25 +195,20 @@ callback.wave = sines
 # callback.wave = triangle_wave + square_wave
 
 # for paFloat32 sample values must be in range [-1.0, 1.0]
-stream = p.open(format=pyaudio.paFloat32,
-                channels=1,
-                rate=fr,
-                # input=True,
-                output=True,
-                stream_callback=callback)
+# stream = p.open(format=pyaudio.paFloat32,
+#                 channels=1,
+#                 rate=fr,
+#                 # input=True,
+#                 output=True,
+#                 stream_callback=callback)
 # non-blocking
 # start the stream
-stream.start_stream()
+# stream.start_stream()
 # wait for stream to finish because the audio playing is non-blocking
-while stream.is_active():
-    time.sleep(0.01)
+# while stream.is_active():
+    # time.sleep(0.01)
 
-# for paFloat32 sample values must be in range [-1.0, 1.0]
-# stream = p.open(format=pyaudio.paFloat32,
-                # channels=1,
-                # rate=fr,
-                # input=True,
-                # output=True)
+
 # can just play things sequentially for now
 # TODO implement schedular to be able to play things with any spacing / time signature
 # first = major(440/2, 'maj7/6')
