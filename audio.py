@@ -3,7 +3,8 @@
 # you need to also give script executable right and run with sudo
 
 """
-For now, this file is a playground for generating sounds
+A playground for generating sounds for now but will be a audio playback or 
+generation module
 """
 
 import pyaudio
@@ -147,43 +148,11 @@ stream = p.open(format=pyaudio.paFloat32,
                 # input=True,
                 output=True)
 
-# weird alien ship pulse effect
-# the end-start is how many modulations to do
-# the amount is the wobbly-ness (TODO investigate the weird pulses at the ends of cycles)
-# there is a relationship btw the number of modulations with the amount to modulate by
-# TODO allowing UI to control these parameters
-def phase_off(start=0, end=3, freq=440, off=0, amount=1, duration=0.05, amp=1.0):
-    summation = generate_sine(freq, duration)
-    for i in range(start, end):
-        freq += amount
-        summation += generate_sine(freq, duration, offset=off)
-    return normalize(summation, amp)
-
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
 
-sample = []
-for i in range(1, 441):
-    print('Hz:', i)
-    sine = phase_off(freq=220, amount=i/2, off=i/2)
-    sine2 = phase_off(freq=i, amount=i/3)
-    if i >= 50:
-        sine3 = generate_triangle(i, duration=0.05, amp=i*.001, offset=i/3)
-        # we need to extend otherwise we would just have a 0 duration audio
-        sample.extend((sine + sine2 + sine3).tolist())
-        stream.write((sine + sine2 + sine3).tobytes())
-    else:
-        sample.extend((sine + sine2).tolist())
-        stream.write((sine+sine2).tobytes())
-
-sine4 = phase_off(freq=440, end=3, amount=13, duration=0.5)
-stream.write(sine4.tobytes())
-sample.extend(sine4.tolist())
-write_wave(WAVE_OUTPUT_FILENAME, np.array(sample))
-print('Successfully written to', WAVE_OUTPUT_FILENAME+'! :)')
-
 # stream.write(sine.tobytes())
-# callback.wave = sines
+sine_wave = generate_triangle(freq=200, duration=1.0)
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
@@ -220,6 +189,9 @@ print('Successfully written to', WAVE_OUTPUT_FILENAME+'! :)')
 # the tobytes() is required due to pyaudio conversion of numpy	    
 # https://stackoverflow.com/a/48454913/9193847
 
+def play():
+    stream.write(sine_wave)
+
 def clean_up():
     stream.stop_stream()
     stream.close()
@@ -250,4 +222,4 @@ def clean_up():
 #     on_release = on_release) as listener:
 #     listener.join()
 
-clean_up()
+# clean_up()

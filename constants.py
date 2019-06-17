@@ -1,3 +1,7 @@
+"""
+This contains all things related to music as constants (maybe more in future)
+"""
+
 # Declaring all constants
 OCTAVE = 8
 CHROMATIC = 12
