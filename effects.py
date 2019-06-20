@@ -17,7 +17,6 @@ def phase_off(start=0, end=3, freq=440, off=0, amount=1, duration=0.05, amp=1.0)
         summation += generate_sine(freq, duration, offset=off)
     return normalize(summation, amp)
 
-
 # TODO arpeggiator
 
 

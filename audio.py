@@ -113,7 +113,6 @@ def callback(in_data, frame_count, time_info, status):
     callback.start_offset += frame_count
     # let pyaudio continue calling this function until there's no more data
     # to be read from wave
-    # TODO need to figure a continuous loop style as well for indefinite duration
     return data, pyaudio.paContinue
 
 callback.times = 0
@@ -135,24 +134,22 @@ def dominant(root, formula, time):
     freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
     return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
+
+triangle_wave = generate_triangle(freq=200)
+
 # set callback to the chords which is summation of the 3 notes
 # testing lower pitch of A4 for now
 # callback.wave = major(440/2, 'maj7/6')
 # callback.wave = minor(440/2, 'minmaj7')
 # callback.wave = dominant(440/2, '7/6sus4')
 
-# for paFloat32 sample values must be in range [-1.0, 1.0]
-stream = p.open(format=pyaudio.paFloat32,
-                channels=1,
-                rate=fr,
-                # input=True,
-                output=True)
-
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
 
 # stream.write(sine.tobytes())
-sine_wave = generate_triangle(freq=200, duration=1.0)
+# sine_wave = generate_triangle(freq=200, duration=1.0)
+# callback.wave = sine_wave
+
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
@@ -163,20 +160,28 @@ sine_wave = generate_triangle(freq=200, duration=1.0)
 # callback.wave = sine_wave + triangle_wave
 # callback.wave = triangle_wave + square_wave
 
-# for paFloat32 sample values must be in range [-1.0, 1.0]
+# non-blocking
 # stream = p.open(format=pyaudio.paFloat32,
 #                 channels=1,
 #                 rate=fr,
 #                 # input=True,
 #                 output=True,
 #                 stream_callback=callback)
-# non-blocking
 # start the stream
 # stream.start_stream()
 # wait for stream to finish because the audio playing is non-blocking
 # while stream.is_active():
     # time.sleep(0.01)
 
+# blocking version
+# the tobytes() is required due to pyaudio conversion of numpy	    
+# https://stackoverflow.com/a/48454913/9193847
+# for paFloat32 sample values must be in range [-1.0, 1.0]
+# stream = p.open(format=pyaudio.paFloat32,
+#                 channels=1,
+#                 rate=fr,
+# #                 # input=True,
+#                 output=True)
 
 # can just play things sequentially for now
 # TODO implement schedular to be able to play things with any spacing / time signature
@@ -185,17 +190,14 @@ sine_wave = generate_triangle(freq=200, duration=1.0)
 # stream.write(dom.tobytes())
 # stream.write(first.tobytes())
 
-# blocking version
-# the tobytes() is required due to pyaudio conversion of numpy	    
-# https://stackoverflow.com/a/48454913/9193847
+def get_stream():
+    return p.open(format=pyaudio.paFloat32,
+                channels=1,
+                rate=fr,
+                # input=True,
+                output=True)
 
-def play():
-    stream.write(sine_wave)
-
-def clean_up():
-    stream.stop_stream()
-    stream.close()
-
+# TODO experiment with simultaneous press?
 # # playing with keyboard events; for now it makes it easy to debug sounds
 # from pynput import keyboard
 
