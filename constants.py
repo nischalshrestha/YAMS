@@ -110,3 +110,13 @@ def init_frequency_table():
         frequency_table[note_list[i]] = round(f, 2)
     return frequency_table
 TABLE = init_frequency_table()
+
+# Note relative lengths and time constants
+THIRTY_SECOND = 0.125
+SIXTEENTH = 0.25
+EIGHTH = 0.5
+QUARTER = 1
+HALF = 2
+WHOLE = 4
+MINUTE = 60
+

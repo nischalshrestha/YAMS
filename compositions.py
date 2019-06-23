@@ -2,12 +2,16 @@
 This contains small sounds and tracks we can make with the system so far
 """
 
-from audio import *
+import audio
+from audio import generate_triangle
+from audio import write_wave
 from effects import phase_off
+
+stream = audio.get_stream()
 
 # blast off to 440hz piece
 sample = []
-for i in range(1, 441):
+for i in range(1, 221):
     print('Hz:', i)
     sine = phase_off(freq=220, amount=i/2, off=i/2)
     sine2 = phase_off(freq=i, amount=i/3)

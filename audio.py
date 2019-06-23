@@ -78,15 +78,17 @@ def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     ys = apodize(ys)
     return ys.astype(np.float32)
 
-def generate_triangle(freq=440, duration=1, start=0, offset=0, amp=1.0):
+def generate_triangle(freq=440, duration=1.0, start=0.0, offset=0, amp=1.0):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
     ts = start + np.arange(fr * duration) / fr
     cycles = freq * ts + offset / 2*np.pi
     frac, _ = np.modf(cycles)
-    ys = np.abs(frac - 0.5)
-    ys = normalize(unbias(ys), amp)
+    ys = normalize(np.abs(frac - 0.5))
+    ys = unbias(ys)
     ys = apodize(ys)
+    silence = 0 * (np.arange(start * fr) / fr)
+    ys = np.append(silence, ys)
     return ys.astype(np.float32)
 
 def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
@@ -134,22 +136,31 @@ def dominant(root, formula, time):
     freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
     return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
-
-triangle_wave = generate_triangle(freq=200)
-
-# set callback to the chords which is summation of the 3 notes
-# testing lower pitch of A4 for now
-# callback.wave = major(440/2, 'maj7/6')
-# callback.wave = minor(440/2, 'minmaj7')
-# callback.wave = dominant(440/2, '7/6sus4')
-
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
 
-# stream.write(sine.tobytes())
-# sine_wave = generate_triangle(freq=200, duration=1.0)
-# callback.wave = sine_wave
+def get_stream():
+    return p.open(format=pyaudio.paFloat32,
+                channels=1,
+                rate=fr,
+                # input=True,
+                output=True)
 
+def clean_up():
+    p.terminate()
+
+def combine(a, b):
+    c = np.zeros(max(len(a), len(b)))
+    if len(a) < len(b):
+        c = b.copy()
+        c[:len(a)] += a
+    else:
+        c = a.copy()
+        c[:len(b)] += b
+    return c
+
+# simple waves
+# callback.wave = sine_wave
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
@@ -159,6 +170,9 @@ def write_wave(file_path, wave):
 # callback.wave = sine_wave + square_wave
 # callback.wave = sine_wave + triangle_wave
 # callback.wave = triangle_wave + square_wave
+
+# chords; testing lower pitch of A4 for now
+# callback.wave = major(440/2, 'maj7/6')
 
 # non-blocking
 # stream = p.open(format=pyaudio.paFloat32,
@@ -182,20 +196,6 @@ def write_wave(file_path, wave):
 #                 rate=fr,
 # #                 # input=True,
 #                 output=True)
-
-# can just play things sequentially for now
-# TODO implement schedular to be able to play things with any spacing / time signature
-# first = major(440/2, 'maj7/6')
-# dom = dominant(440/2, '7/6sus4')
-# stream.write(dom.tobytes())
-# stream.write(first.tobytes())
-
-def get_stream():
-    return p.open(format=pyaudio.paFloat32,
-                channels=1,
-                rate=fr,
-                # input=True,
-                output=True)
 
 # TODO experiment with simultaneous press?
 # # playing with keyboard events; for now it makes it easy to debug sounds
@@ -224,4 +224,4 @@ def get_stream():
 #     on_release = on_release) as listener:
 #     listener.join()
 
-# clean_up()
+
