@@ -66,7 +66,7 @@ def unbias(ys):
     """
     return ys - ys.mean()
 
-def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
+def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=True):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
     # # framerate is the # samples per second so we divide each second by fr
@@ -75,10 +75,10 @@ def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
     phases = 2 * np.pi * freq * ts  + offset
     # generate samples, note conversion to float32 array
     ys = amp * np.sin(phases)
-    ys = apodize(ys)
+    if taper: ys = apodize(ys)
     return ys.astype(np.float32)
 
-def generate_triangle(freq=440, duration=1.0, start=0.0, offset=0, amp=1.0):
+def generate_triangle(freq=440, duration=1.0, start=0.0, offset=0, amp=1.0, taper=True):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
     ts = start + np.arange(fr * duration) / fr
@@ -86,28 +86,39 @@ def generate_triangle(freq=440, duration=1.0, start=0.0, offset=0, amp=1.0):
     frac, _ = np.modf(cycles)
     ys = normalize(np.abs(frac - 0.5))
     ys = unbias(ys)
-    ys = apodize(ys)
     silence = 0 * (np.arange(start * fr) / fr)
     ys = np.append(silence, ys)
+    if taper: ys = apodize(ys)
     return ys.astype(np.float32)
 
-def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
+def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=True):
     # makes sure that amp is within range [0.0, 1.0]
     amp = max(0, min(1.0, amp))
     ts = start + np.arange(fr * duration) / fr
     cycles = freq * ts + offset / 2*np.pi
     frac, _ = np.modf(cycles)
     ys = amp * np.sign(unbias(frac))
-    ys = apodize(ys)
+    if taper: ys = apodize(ys)
     return ys.astype(np.float32)
 
-def generate_sawtooth(freq=440, duration=1.0, start=0, offset=0, amp=1.0):
+def generate_sawtooth(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=True):
     ts = start + np.arange(fr * duration) / fr
     cycles = freq * ts + offset / 2*np.pi
     frac, _ = np.modf(cycles)
     ys = normalize(unbias(frac), amp)
-    ys = apodize(ys)
+    if taper: ys = apodize(ys)
     return ys.astype(np.float32)
+
+def get_wave(wave_shape, freq, duration):
+    if wave_shape == "triangle":
+        wave = generate_triangle(freq=freq, duration=duration, taper=False)
+    elif wave_shape == "sine":
+        wave = generate_sine(freq=freq, duration=duration, taper=False)
+    elif wave_shape == "square":
+        wave = generate_square(freq=freq, duration=duration, amp=0.25, taper=False)
+    elif wave_shape == "sawtooth":
+        wave = generate_sawtooth(freq=freq, duration=duration, amp=0.25, taper=False)
+    return wave
 
 def callback(in_data, frame_count, time_info, status):
     end = callback.start_offset + frame_count
@@ -139,12 +150,19 @@ def dominant(root, formula, time):
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
 
-def get_stream():
+def get_stream(callback=None):
+    if callback is not None:
+        return p.open(format=pyaudio.paFloat32,
+                    channels=1,
+                    rate=fr,
+                    # input=True,
+                    output=True,
+                    stream_callback=callback)
     return p.open(format=pyaudio.paFloat32,
-                channels=1,
-                rate=fr,
-                # input=True,
-                output=True)
+                    channels=1,
+                    rate=fr,
+                    # input=True,
+                    output=True)
 
 def clean_up():
     p.terminate()
@@ -159,12 +177,15 @@ def combine(a, b):
         c[:len(b)] += b
     return c
 
+
 # simple waves
-# callback.wave = sine_wave
+sine_wave = generate_sine(freq=200)
+callback.wave = sine_wave
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
 # combinations
+
 # triangle_wave = generate_triangle(freq=200)
 # square_wave = generate_square(freq=40)
 # callback.wave = sine_wave + square_wave
@@ -182,10 +203,16 @@ def combine(a, b):
 #                 output=True,
 #                 stream_callback=callback)
 # start the stream
-# stream.start_stream()
-# wait for stream to finish because the audio playing is non-blocking
-# while stream.is_active():
-    # time.sleep(0.01)
+# from constants import *
+# # wait for stream to finish because the audio playing is non-blocking
+# while True:
+#     # stream = get_stream(callback=callback)
+#     # stream.start_stream()
+#     time.sleep(0.1)
+#     callback.start_offset = 0 
+#     callback.times = 0
+#     stream = get_stream(callback=callback)
+#     stream.start_stream()
 
 # blocking version
 # the tobytes() is required due to pyaudio conversion of numpy	    

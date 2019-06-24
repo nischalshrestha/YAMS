@@ -8,6 +8,7 @@ from audio import write_wave
 from effects import phase_off
 
 stream = audio.get_stream()
+# TODO make a 
 
 # blast off to 440hz piece
 sample = []
