@@ -9,9 +9,10 @@ class Oscillator(threading.Thread):
 
     def __init__(self, freq, wave_shape, duration=1.0):
         Thread.__init__(self)
+        print(self.getName(), freq)
         self.stream = get_stream()
         self.wave = audio.get_wave(wave_shape, freq, duration)
-        self.wave_gen = self.generate()
+        # self.wave_gen = self.generate()
         self.running = False
 
     def generate(self):
@@ -21,8 +22,8 @@ class Oscillator(threading.Thread):
     
     def run(self):
         self.running = True
-        while True and self.running:
-            self.stream.write(next(self.wave_gen).tobytes())
+        while self.running:
+            self.stream.write(self.wave.tobytes())
         self.stream.stop_stream()
         self.stream.close()
 

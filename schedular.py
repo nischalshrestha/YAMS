@@ -11,6 +11,8 @@ from audio import generate_triangle
 from audio import generate_square
 from audio import generate_sine
 from oscillator import Oscillator
+from metronome import Metronome
+from arpeggiator import Arpeggiator
 from constants import *
 
 # TODO clean up when program is quit unexpectedly (ctrl c or other)
@@ -35,30 +37,28 @@ time_keeper = TimeKeeper(stream)
 def bpm(num):
     return MINUTE / num
 
-# TODO can add frequency type as well
-def metronome(note, beats, wave_shape):
-    """
-    Basic metronome given type of note length (quarter note etc.) the beats
-    in bpm and wave shape
-    """
-    base_dur = beats
-    note_dur = note*base_dur
-    wave = audio.get_wave(wave_shape, 220, duration=0.05)
-    last = time_keeper.sample()
-    while True:
-        curr = time_keeper.sample()
-        # instead of using exact time of play, calculate next time for more accuracy
-        if curr >= last + note_dur:
-            # since the write blocks for only the time it needs to, it will be
-            # fairly accurate compared to time.sleep() which might drift
-            print('beep', curr)
-            stream.write(wave.tobytes())
-            last = curr
 
+# sound = audio.get_wave("triangle", 220, duration=0.05)
+# m = Metronome(time_keeper, bpm(120), SIXTEENTH)
+# m.set_sound(sound)
+# m.start()
 
 # osc = Oscillator(220, "triangle")
 # osc.start()
-# metronome(QUARTER, bpm(60), "triangle")
+# osc.stop()
+
+# Example composition of arpeggios
+# arp = Arpeggiator(time_keeper, bpm(180), EIGHTH, 55, 'maj', 'maj')
+# arp.start()
+# time.sleep(5)
+# arp2 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 110, 'maj', 'maj13')
+# arp2.start()
+# time.sleep(5)
+# arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'maj', 'maj7')
+# arp3.start()
+# time.sleep(5)
+# arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'maj', 'maj6/9')
+# arp4.start()
 
 # TODO add wave shape
 def play_notes_for(freq, note, duration, beats):

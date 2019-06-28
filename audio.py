@@ -109,15 +109,15 @@ def generate_sawtooth(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=
     if taper: ys = apodize(ys)
     return ys.astype(np.float32)
 
-def get_wave(wave_shape, freq, duration):
+def get_wave(wave_shape, freq, duration, amp=1.0, taper=True):
     if wave_shape == "triangle":
-        wave = generate_triangle(freq=freq, duration=duration, taper=False)
+        wave = generate_triangle(freq=freq, duration=duration, amp=amp, taper=taper)
     elif wave_shape == "sine":
-        wave = generate_sine(freq=freq, duration=duration, taper=False)
+        wave = generate_sine(freq=freq, duration=duration, amp=amp, taper=taper)
     elif wave_shape == "square":
-        wave = generate_square(freq=freq, duration=duration, amp=0.25, taper=False)
+        wave = generate_square(freq=freq, duration=duration, amp=amp, taper=taper)
     elif wave_shape == "sawtooth":
-        wave = generate_sawtooth(freq=freq, duration=duration, amp=0.25, taper=False)
+        wave = generate_sawtooth(freq=freq, duration=duration, amp=amp, taper=taper)
     return wave
 
 def callback(in_data, frame_count, time_info, status):
@@ -131,20 +131,26 @@ def callback(in_data, frame_count, time_info, status):
 callback.times = 0
 callback.start_offset = 0
 
-def major(root, formula, time):
+def major(root, formula, time, arp=False):
     # equation for frequency calculation using equal-tempered scale: 
     # fn = f0 * (a)^n, fn = target freq, f0 is root, a = 2^(1/12)
     freqs = [root * (A) ** h for h in MAJOR_FORMULA[formula]]
     # generate the audio samples for each note and sum up for chord audio data
     # we need to normalize it to amp (for now just use default 1.0)
-    return normalize(sum([generate_sawtooth(freq=f, duration=1.0) for f in freqs]))
-
-def minor(root, formula, time):
-    freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
+    if arp:
+        return [generate_triangle(freq=f, duration=time, taper=True) for f in freqs]
     return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
-def dominant(root, formula, time):
+def minor(root, formula, time, arp=False):
+    freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
+    if arp:
+        return [generate_triangle(freq=f, duration=time) for f in freqs]
+    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
+
+def dominant(root, formula, time, arp=False):
     freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
+    if arp:
+        return [generate_triangle(freq=f, duration=time) for f in freqs]
     return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
 def write_wave(file_path, wave):
@@ -179,8 +185,8 @@ def combine(a, b):
 
 
 # simple waves
-sine_wave = generate_sine(freq=200)
-callback.wave = sine_wave
+# sine_wave = generate_sine(freq=200)
+# callback.wave = sine_wave
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
