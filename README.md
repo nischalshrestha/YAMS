@@ -1,6 +1,6 @@
 # YAMS (Yet Another Modular Synthesizer)
 
-Modular Synthesis in Python using pyaudio.
+A **WORK IN PROGRESS** Modular Synthesis in Python using pyaudio.
 
 # Dependencies 
 
