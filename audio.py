@@ -131,6 +131,15 @@ def callback(in_data, frame_count, time_info, status):
 callback.times = 0
 callback.start_offset = 0
 
+def silence(duration):
+    return get_wave("triangle", 0, duration)
+
+def mode(root, formula, time):
+    freqs = [root * (A) ** h for h in MODES[formula]]
+    # TODO create a function to compose waves more easily
+    # testing composition of waves for each note in scale
+    return [generate_triangle(freq=f, duration=time, taper=True)+generate_sine(freq=f/2, duration=time, taper=True) for f in freqs]
+
 def major(root, formula, time, arp=False):
     # equation for frequency calculation using equal-tempered scale: 
     # fn = f0 * (a)^n, fn = target freq, f0 is root, a = 2^(1/12)

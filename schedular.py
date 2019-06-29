@@ -10,6 +10,7 @@ import pyaudio
 from audio import generate_triangle
 from audio import generate_square
 from audio import generate_sine
+from audio import write_wave
 from oscillator import Oscillator
 from metronome import Metronome
 from arpeggiator import Arpeggiator
@@ -37,7 +38,6 @@ time_keeper = TimeKeeper(stream)
 def bpm(num):
     return MINUTE / num
 
-
 # sound = audio.get_wave("triangle", 220, duration=0.05)
 # m = Metronome(time_keeper, bpm(120), SIXTEENTH)
 # m.set_sound(sound)
@@ -47,18 +47,6 @@ def bpm(num):
 # osc.start()
 # osc.stop()
 
-# Example composition of arpeggios
-# arp = Arpeggiator(time_keeper, bpm(180), EIGHTH, 55, 'maj', 'maj')
-# arp.start()
-# time.sleep(5)
-# arp2 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 110, 'maj', 'maj13')
-# arp2.start()
-# time.sleep(5)
-# arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'maj', 'maj7')
-# arp3.start()
-# time.sleep(5)
-# arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'maj', 'maj6/9')
-# arp4.start()
 
 # TODO add wave shape
 def play_notes_for(freq, note, duration, beats):

@@ -16,7 +16,7 @@ class Metronome(threading.Thread):
         self.time_keeper = time_keeper
         self.beats = beats
         self.note_dur = note_length*beats
-        self.silence = audio.get_wave("triangle", 0, 0.05)
+        self.silence = audio.silence(0.05)
         self.sound = self.silence if sound is None else sound 
         self.running = False
     

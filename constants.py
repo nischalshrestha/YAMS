@@ -13,13 +13,13 @@ SCALES = {
 }
 # each mode value stands for the interval to start on for key
 MODES = {
-    'ionian': [2, 2, 1, 2, 2, 2, 1],
-    'dorian': [2, 1, 2, 2, 2, 1, 2],
-    'phrygian': [1, 2, 2, 2, 1, 2, 2],
-    'lydian': [2, 2, 2, 1, 2, 2, 1],
-    'mixolydian': [2, 2, 1, 2, 2, 1, 2],
-    'aeolian': [2, 1, 2, 2, 1, 2, 2],
-    'locrian': [1, 2, 2, 1, 2, 2, 2],
+    'ionian': [0, 2, 4, 5, 7, 9, 11, 12],
+    'dorian': [0, 2, 3, 5, 7, 9, 10, 12],
+    'phrygian': [0, 1, 3, 5, 7, 8, 10, 12],
+    'lydian': [0, 2, 4, 6, 7, 9, 11, 12],
+    'mixolydian': [0, 2, 4, 5, 7, 9, 10, 12],
+    'aeolian': [0, 2, 3, 5, 7, 8, 11, 12],
+    'locrian': [0, 1, 3, 5, 6, 8, 10, 12],
 }
 
 # these are based on how many half tones needed for 3rd 5th etc.
