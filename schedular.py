@@ -32,21 +32,21 @@ class TimeKeeper():
 
 # it doesn't matter which stream we get, just get one to begin with since the
 # audio device time is updated for any new stream we create
-stream = audio.get_stream()
-time_keeper = TimeKeeper(stream)
+# stream = audio.get_stream()
+def get_time_keeper():
+    return TimeKeeper(audio.get_stream())
 
 def bpm(num):
     return MINUTE / num
 
 # sound = audio.get_wave("triangle", 220, duration=0.05)
-# m = Metronome(time_keeper, bpm(120), SIXTEENTH)
+# m = Metronome(get_time_keeper(), bpm(120), EIGHTH)
 # m.set_sound(sound)
 # m.start()
 
 # osc = Oscillator(220, "triangle")
 # osc.start()
 # osc.stop()
-
 
 # TODO add wave shape
 def play_notes_for(freq, note, duration, beats):

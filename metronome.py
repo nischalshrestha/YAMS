@@ -23,7 +23,6 @@ class Metronome(threading.Thread):
     def run(self):
         self.running = True
         last = self.time_keeper.sample()
-        pos = 1
         while self.running:
             curr = self.time_keeper.sample()
             # instead of using exact time of play, calculate next time for more accuracy
@@ -33,7 +32,6 @@ class Metronome(threading.Thread):
                 # print('beep', curr, 'pos', pos)
                 self.stream.write(self.sound.tobytes())
                 last = curr
-                pos = pos + 1 if pos + 1 <= OCTAVE else 1
     
     def set_sound(self, sound=None):
         self.sound = self.silence if sound is None else sound

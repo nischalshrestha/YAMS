@@ -1,8 +1,5 @@
-import time
 import threading
 from threading import Thread
-# import schedular
-# from schedular import TimeKeeper
 from constants import *
 import audio
 import numpy as np
@@ -20,7 +17,6 @@ class Arpeggiator(threading.Thread):
         Thread.__init__(self)
         self.stream = audio.get_stream()
         self.time_keeper = time_keeper
-        self.beats = beats
         self.note_dur = note_length*beats
         # TODO make this more robust
         if not scale:
@@ -41,9 +37,9 @@ class Arpeggiator(threading.Thread):
         while self.running:
             curr = self.time_keeper.sample()
             if curr >= last + self.note_dur:
-                self.stream.write(self.steps[pos].tobytes())
+                self.stream.write(self.steps[pos % len(self.steps)].tobytes())
                 last = curr
-                pos = pos + 1 if (pos + 1) < len(self.steps) else 0
+                pos += 1
     
     def set_sound(self, sound=None):
         self.sound = self.silence if sound is None else sound

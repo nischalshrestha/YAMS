@@ -5,13 +5,14 @@ This contains all things related to music as constants (maybe more in future)
 # Declaring all constants
 OCTAVE = 8
 CHROMATIC = 12
-# 1 stands for semitone, 2 for whole tone
+# each value is # halfsteps
 SCALES = {
-    'major': [2, 2, 1, 2, 2, 2, 1],
-    'minor': [2, 1, 2, 2, 2, 1, 2],
-    'natural_minor': [2, 1, 2, 2, 1, 2, 2],
+    'major': [0, 2, 4, 5, 7, 9, 11, 12],
+    'minor': [0, 2, 3, 5, 7, 9, 10, 12],
+    'natural_minor': [0, 2, 3, 5, 7, 8, 10, 12],
+    'harmonic_minor': [0, 2, 3, 5, 7, 8, 11, 12]
 }
-# each mode value stands for the interval to start on for key
+# each value is # halfsteps
 MODES = {
     'ionian': [0, 2, 4, 5, 7, 9, 11, 12],
     'dorian': [0, 2, 3, 5, 7, 9, 10, 12],
@@ -20,6 +21,21 @@ MODES = {
     'mixolydian': [0, 2, 4, 5, 7, 9, 10, 12],
     'aeolian': [0, 2, 3, 5, 7, 8, 11, 12],
     'locrian': [0, 1, 3, 5, 6, 8, 10, 12],
+}
+
+ESOTERIC = {
+    'super_locrian': [0, 1, 3, 4, 6, 8, 10],
+    'arabic': [0, 1, 4, 5, 7, 8, 11],
+    'hungarian_minor': [0, 2, 3, 6, 7, 8, 11],
+    'minor_gypsy': [0, 1, 4, 5, 7, 8, 10],
+    'hirojoshi': [0, 2, 3, 7, 8],
+    'in_sen': [0, 1, 5, 7, 10],
+    'iwato': [0, 1, 5, 6, 10],
+    'kumoi': [0, 2, 3, 7, 9],
+    'pelog': [0, 1, 3, 4, 7, 8],
+    'spanish': [0, 1, 3, 4, 5, 6, 8, 10],
+    'tritone': [0, 1, 4, 6, 7, 10],
+    'enigmatic': [0, 1, 4, 6, 8, 10, 11]
 }
 
 # these are based on how many half tones needed for 3rd 5th etc.

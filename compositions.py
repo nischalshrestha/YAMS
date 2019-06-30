@@ -4,12 +4,16 @@ This contains small sounds and tracks we can make with the system so far
 
 import numpy as np
 import audio
+import time
+from audio import get_wave
 from audio import generate_triangle
 from audio import write_wave
 from audio import silence
-from schedular import bpm
+from schedular import bpm, get_time_keeper
 from effects import phase_off
 from constants import *
+from arpeggiator import Arpeggiator
+from metropolis import Metropolis
 
 stream = audio.get_stream()
 
@@ -40,11 +44,11 @@ def blast_off():
 def write_modes():
     """Example of writing a series of notes to a file in some tempo"""
     # 1/8 notes in 120bpm
-    silence = audio.silence(EIGHTH*bpm(120)) 
+    silence = audio.silence(SIXTEENTH*bpm(220)) 
     waves = []
     for i, m in enumerate(MODES):
         print(m)
-        mode_notes = audio.mode(220, m, 0.05)
+        mode_notes = audio.scale(220, m, 0.05, mode=True)
         mn_list = [] 
         for mn in mode_notes:
             mn_list.extend(mn)
@@ -57,16 +61,22 @@ def write_modes():
 
 # write_modes()
 
+# Experimenting with metropolis :D
+sound = get_wave("triangle", 220, duration=0.05)
+m = Metropolis(get_time_keeper(), bpm(180), EIGHTH, sound=sound, scale='lydian')
+m.start()
+
 # TODO wrap this up in a method
 # Example composition of arpeggios
-# arp = Arpeggiator(time_keeper, bpm(180), EIGHTH, 55, 'maj', 'maj')
+# time_keeper = get_time_keeper()
+# arp = Arpeggiator(time_keeper, bpm(180), EIGHTH, 55, 'maj', tone='maj')
 # arp.start()
 # time.sleep(5)
-# arp2 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 110, 'maj', 'maj13')
+# arp2 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 110, 'maj13', tone='maj')
 # arp2.start()
 # time.sleep(5)
-# arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'maj', 'maj7')
+# arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'majadd9', tone='maj')
 # arp3.start()
 # time.sleep(5)
-# arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'maj', 'maj6/9')
+# arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'maj6/9', tone='maj')
 # arp4.start()
