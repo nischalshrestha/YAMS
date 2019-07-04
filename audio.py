@@ -166,16 +166,16 @@ def dominant(root, formula, time, arp=False):
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
 
-def get_stream(callback=None):
+def get_stream(callback=None, num_channels=1):
     if callback is not None:
         return p.open(format=pyaudio.paFloat32,
-                    channels=1,
+                    channels=num_channels,
                     rate=fr,
                     # input=True,
                     output=True,
                     stream_callback=callback)
     return p.open(format=pyaudio.paFloat32,
-                    channels=1,
+                    channels=num_channels,
                     rate=fr,
                     # input=True,
                     output=True)
