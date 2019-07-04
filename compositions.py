@@ -64,6 +64,28 @@ def write_modes(play=False):
     write_wave(WAVE_OUTPUT_FILENAME, target)
     print('Successfully written to', WAVE_OUTPUT_FILENAME, ':)')
 
+
+def pan_demo(duration, rotations=0):
+    left_sound = audio.normalize(audio.dominant(220, '7/6sus4', duration))
+    right_sound = np.copy(left_sound)
+    right = audio.apodize(np.linspace(0, duration, num=len(left_sound)))
+    left =  np.flip(right, axis=0)
+    lc = left_sound * left
+    rc = right_sound * right
+    left_chan = lc
+    right_chan = rc
+    for i in range(rotations):
+        left =  np.flip(left, axis=0)
+        right =  np.flip(right, axis=0)
+        new_left = left_sound * left
+        new_right = right_sound * right
+        left_chan = audio.normalize(np.hstack((left_chan, new_left)))
+        right_chan = audio.normalize(np.hstack((right_chan, new_right)))
+    target = np.stack((left_chan, right_chan), axis=1)  # channels on separate axes
+    write_wave(WAVE_OUTPUT_FILENAME, target)
+
+pan_demo(5, rotations=1)
+
 # write_modes(True)
 
 # Experimenting with metropolis :D

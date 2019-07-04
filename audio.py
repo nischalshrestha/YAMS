@@ -157,16 +157,16 @@ def minor(root, formula, time, arp=False):
         return [generate_triangle(freq=f, duration=time) for f in freqs]
     return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
 
-def dominant(root, formula, time, arp=False):
+def dominant(root, formula, time, arp=False, taper=False):
     freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
     if arp:
-        return [generate_triangle(freq=f, duration=time) for f in freqs]
-    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
+        return [generate_triangle(freq=f, duration=time, taper=taper) for f in freqs]
+    return normalize(sum([generate_triangle(freq=f, duration=time, taper=taper) for f in freqs]))
 
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
 
-def get_stream(callback=None, num_channels=1):
+def get_stream(callback=None, num_channels=1, chan_map=()):
     if callback is not None:
         return p.open(format=pyaudio.paFloat32,
                     channels=num_channels,
