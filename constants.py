@@ -128,6 +128,7 @@ def init_frequency_table():
 TABLE = init_frequency_table()
 
 # Note relative lengths and time constants
+SIXTY_FOURTH = 0.0625
 THIRTY_SECOND = 0.125
 SIXTEENTH = 0.25
 EIGHTH = 0.5

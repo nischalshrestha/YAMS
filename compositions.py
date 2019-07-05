@@ -84,17 +84,47 @@ def pan_demo(duration, rotations=0):
     target = np.stack((left_chan, right_chan), axis=1)  # channels on separate axes
     write_wave(WAVE_OUTPUT_FILENAME, target)
 
-pan_demo(5, rotations=1)
+# pan_demo(5, rotations=1)
 
 # write_modes(True)
 
 # Experimenting with metropolis :D
-# sound = get_wave("triangle", 220, duration=0.05)
+# sound = get_wave("triangle", 120, duration=0.05)
 # time_keeper = get_time_keeper()
-# m = Metropolis(time_keeper, bpm(180), EIGHTH, sound=sound, scale='lydian')
-# duration = 8*EIGHTH*bpm(180)*1
+# m = Metropolis(time_keeper, bpm(220), QUARTER, 1, sound=sound, scale='dorian')
+# duration = 8*EIGHTH*bpm(180)*3
 # m.start()
+# print("BPM: 220 QUARTER")
+# print("Pulse count 1")
 # time.sleep(duration)
+# for i in range(2, 6):
+#     print(f'Pulse count {i}')
+#     m.set_main_pulse_count(i)
+#     time.sleep(duration)
+# print("BPM: 220 EIGHTH")
+# m.set_main_note_length(EIGHTH)
+# for i in range(1, 6):
+#     print(f'Pulse count {i}')
+#     m.set_main_pulse_count(i)
+#     time.sleep(duration)
+# print("BPM: 220 SIXTEENTH")
+# m.set_main_note_length(SIXTEENTH)
+# for i in range(1, 6):
+#     print(f'Pulse count {i}')
+#     m.set_main_pulse_count(i)
+#     time.sleep(duration)
+# print("BPM: 220 THIRTY-SECOND") 
+# m.set_main_note_length(THIRTY_SECOND)
+# for i in range(1, 6):
+#     print(f'Pulse count {i}')
+#     m.set_main_pulse_count(i)
+#     time.sleep(duration)
+# print("BPM: 220 SIXTY-SECOND") 
+# m.set_main_note_length(SIXTY_FOURTH)
+# for i in range(1, 6):
+#     print(f'Pulse count {i}')
+#     m.set_main_pulse_count(i)
+#     time.sleep(duration)
 # m.stop()
 
 # TODO wrap this up in a method
