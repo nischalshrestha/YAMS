@@ -3,6 +3,7 @@ from threading import Thread
 from constants import *
 import audio
 import numpy as np
+from play import Play
 
 # TODO Make a Base class Sequencer that will allow us to create many different
 # kinds of sequencers; perhaps Metronome is more of a base class
@@ -13,11 +14,15 @@ class Arpeggiator(threading.Thread):
     """
     Basic sequencer
     """
-    def __init__(self, time_keeper, beats, note_length, root, formula, tone='maj', scale=False):
+    def __init__(self, time_keeper, beats, note_length, root, formula, \
+                tone='maj', scale=False, reverb=False, iir="Small Drum Room.wav"):
         Thread.__init__(self)
         self.stream = audio.get_stream()
         self.time_keeper = time_keeper
         self.note_dur = note_length*beats
+        self.silence = audio.silence(self.note_dur)
+        self.reverb = reverb
+        self.iir = iir
         # TODO make this more robust
         if not scale:
             if tone == 'maj':
@@ -37,7 +42,12 @@ class Arpeggiator(threading.Thread):
         while self.running:
             curr = self.time_keeper.sample()
             if curr >= last + self.note_dur:
-                self.stream.write(self.steps[pos % len(self.steps)].tobytes())
+                data = audio.convolve_iir(self.steps[pos % len(self.steps)], self.iir)
+                if self.reverb:
+                    playit = Play(data, self.silence)
+                    playit.start()
+                else:
+                    self.stream.write(self.steps[pos % len(self.steps)].tobytes())
                 last = curr
                 pos += 1
     
@@ -46,3 +56,4 @@ class Arpeggiator(threading.Thread):
 
     def stop(self):
         self.running = False
+        self.join()

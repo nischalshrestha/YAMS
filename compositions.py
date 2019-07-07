@@ -14,6 +14,7 @@ from effects import phase_off
 from constants import *
 from arpeggiator import Arpeggiator
 from metropolis import Metropolis
+from play import Play
 
 stream = audio.get_stream()
 
@@ -46,24 +47,30 @@ def blast_off(play=False):
 
 # blast_off()
 
-def write_modes(play=False):
+def write_modes(play=False, iir="Rays.wav"):
     """Example of writing a series of notes to a file in some tempo"""
     # 1/8 notes in 120bpm
-    silence = audio.silence(SIXTEENTH*bpm(220)) 
+    dur = THIRTY_SECOND*bpm(220)
+    silence = audio.silence(dur) 
     samples = np.array([])
     for i, m in enumerate(MODES):
         print(m)
-        mode_notes = audio.scale(220, m, 0.05, mode=True)
+        mode_notes = audio.scale(440, m, 0.05, mode=True)
         for mn in mode_notes:
+            data = audio.convolve_iir(mn, "St Nicolaes Church.wav")
             if play:
-                stream.write(mn.tobytes())
-                stream.write(silence.tobytes())
+                player = Play(data, silence)
+                player.start()
+                time.sleep(dur)
+                # stream.write(data.tobytes())
+                # stream.write(silence.tobytes())
             samples = np.hstack((samples, mn, silence))
     # you can simply stack the same samples by column if L/R are same
-    target = np.stack((samples, samples), axis=1)  # channels on separate axes
+    # target = audio.convolve_iir(np.stack((samples, samples), axis=1),  "St Nicolaes Church.wav")  # channels on separate axes
     write_wave(WAVE_OUTPUT_FILENAME, target)
     print('Successfully written to', WAVE_OUTPUT_FILENAME, ':)')
 
+# write_modes(play=True)
 
 def pan_demo(duration, rotations=0):
     left_sound = audio.normalize(audio.dominant(220, '7/6sus4', duration))
@@ -86,7 +93,6 @@ def pan_demo(duration, rotations=0):
 
 # pan_demo(5, rotations=1)
 
-# write_modes(True)
 
 # Experimenting with metropolis :D
 # sound = get_wave("triangle", 120, duration=0.05)
@@ -97,7 +103,7 @@ def pan_demo(duration, rotations=0):
 # print("BPM: 220 QUARTER")
 # print("Pulse count 1")
 # time.sleep(duration)
-# for i in range(2, 6):
+# for i in range(2, 3):
 #     print(f'Pulse count {i}')
 #     m.set_main_pulse_count(i)
 #     time.sleep(duration)
@@ -129,15 +135,24 @@ def pan_demo(duration, rotations=0):
 
 # TODO wrap this up in a method
 # Example composition of arpeggios
-# time_keeper = get_time_keeper()
-# arp = Arpeggiator(time_keeper, bpm(180), EIGHTH, 55, 'maj', tone='maj')
-# arp.start()
-# time.sleep(5)
-# arp2 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 110, 'maj13', tone='maj')
-# arp2.start()
-# time.sleep(5)
-# arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'majadd9', tone='maj')
-# arp3.start()
-# time.sleep(5)
-# arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'maj6/9', tone='maj')
-# arp4.start()
+time_keeper = get_time_keeper()
+arp = Arpeggiator(time_keeper, bpm(180), EIGHTH, 55, 'maj', tone='maj')
+arp.start()
+time.sleep(HALF*bpm(180)*6)
+arp2 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 110, 'maj13', tone='maj', reverb=True)
+arp2.start()
+time.sleep(HALF*bpm(180)*4)
+arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'majadd9', tone='maj', reverb=True)
+arp3.start()
+time.sleep(HALF*bpm(180)*4)
+arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'maj6/9', tone='maj', reverb=True, iir="St Nicolaes Church.wav")
+arp4.start()
+time.sleep(WHOLE*bpm(180)*8)
+arp.stop()
+arp.join()
+arp2.stop()
+arp2.join()
+arp3.stop()
+arp3.join()
+arp4.stop()
+arp4.join()

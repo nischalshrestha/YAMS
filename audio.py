@@ -11,6 +11,8 @@ import pyaudio
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
+from scipy.io.wavfile import read
+from scipy.signal import fftconvolve 
 import matplotlib.pyplot as plt
 
 import time
@@ -162,6 +164,12 @@ def dominant(root, formula, time, arp=False, taper=False):
     if arp:
         return [generate_triangle(freq=f, duration=time, taper=taper) for f in freqs]
     return normalize(sum([generate_triangle(freq=f, duration=time, taper=taper) for f in freqs]))
+
+def convolve_iir(data, iir):
+    a = read("IMreverbs/"+iir)
+    impulse_response = np.array(a[1], dtype=float)[:, 0]
+    convolved = normalize(fftconvolve(data, impulse_response)).astype(np.float32)
+    return convolved
 
 def write_wave(file_path, wave):
     wavfile.write(file_path, fr, wave)
