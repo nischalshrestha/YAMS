@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# ^ this is required for capturing key events
-# you need to also give script executable right and run with sudo
-
 """
 A playground for generating sounds for now but will be a audio playback or 
 generation module
@@ -9,11 +5,11 @@ generation module
 
 import pyaudio
 import numpy as np
+import scipy as sc
 from scipy import signal
 from scipy.io import wavfile
 from scipy.io.wavfile import read
 from scipy.signal import fftconvolve 
-import matplotlib.pyplot as plt
 
 import time
 import sys
@@ -21,34 +17,12 @@ from constants import *
 
 # TODO add encapsulation with use of classes once different wave shapes
 # can be generated
-p = pyaudio.PyAudio()
-fr = 44100
+FR = 44100
 # fr = 10000
 WAVE_OUTPUT_FILENAME = "output.wav"
 CHANNELS = 1
-
-# https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L795
-def apodize(ys, framerate=44100, denom=20, duration=0.1):
-    """Tapers the amplitude at the beginning and end of the signal.
-    Tapers either the given duration of time or the given
-    fraction of the total duration, whichever is less.
-    ys: wave array
-    framerate: int frames per second
-    denom: float fraction of the segment to taper
-    duration: float duration of the taper in seconds
-    returns: wave array
-    """
-    # a fixed fraction of the segment
-    n = len(ys)
-    k1 = n // denom
-    # a fixed duration of time
-    k2 = int(duration * framerate)
-    k = min(k1, k2)
-    w1 = np.linspace(0, 1, k)
-    w2 = np.ones(n - 2*k)
-    w3 = np.linspace(1, 0, k)
-    window = np.concatenate((w1, w2, w3))
-    return ys * window
+TWOPI = 2*np.pi
+p = pyaudio.PyAudio()
 
 # source: https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L1068
 def normalize(ys, amp=1.0):
@@ -60,7 +34,6 @@ def normalize(ys, amp=1.0):
     high, low = abs(max(ys)), abs(min(ys))
     return amp * ys / max(high, low)
 
-# source: https://github.com/AllenDowney/ThinkDSP/blob/master/code/thinkdsp.py#L1058
 def unbias(ys):
     """Shifts a wave array so it has mean 0.
     ys: wave array
@@ -68,58 +41,81 @@ def unbias(ys):
     """
     return ys - ys.mean()
 
-def generate_sine(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=True):
-    # makes sure that amp is within range [0.0, 1.0]
-    amp = max(0, min(1.0, amp))
-    # # framerate is the # samples per second so we divide each second by fr
-    ts = start + np.arange(fr * duration) / fr
-    # # This is the evaluation of the wave given the ts
-    phases = 2 * np.pi * freq * ts  + offset
-    # generate samples, note conversion to float32 array
-    ys = amp * np.sin(phases)
-    if taper: ys = apodize(ys)
-    return ys.astype(np.float32)
+def w(freq):
+    """Returns angular frequency"""
+    return freq * TWOPI
 
-def generate_triangle(freq=440, duration=1.0, start=0.0, offset=0, amp=1.0, taper=True):
-    # makes sure that amp is within range [0.0, 1.0]
-    amp = max(0, min(1.0, amp))
-    ts = start + np.arange(fr * duration) / fr
-    cycles = freq * ts + offset / 2*np.pi
-    frac, _ = np.modf(cycles)
-    ys = normalize(np.abs(frac - 0.5))
-    ys = unbias(ys)
-    silence = 0 * (np.arange(start * fr) / fr)
-    ys = np.append(silence, ys)
-    if taper: ys = apodize(ys)
-    return ys.astype(np.float32)
+def taper_wave(wave, fr=FR, factor=20, duration=.1):
+    """
+    Tapers the beginning and end of a wave to avoid clicks from steep
+    increase/decrease in amplitude based on fraction of the wave or duration.
+    """
+    wave_len = len(wave)
+    taper = min(wave_len // factor, int(fr * duration))
+    beg = np.linspace(0, 1, taper)
+    mid = np.ones(wave_len - 2*taper)
+    end = np.linspace(1, 0, taper)
+    amp = np.concatenate((beg, mid, end))
+    return amp * wave
 
-def generate_square(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=True):
-    # makes sure that amp is within range [0.0, 1.0]
+def sine(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+    """Returns a sine wave, tapering if needed"""
     amp = max(0, min(1.0, amp))
-    ts = start + np.arange(fr * duration) / fr
-    cycles = freq * ts + offset / 2*np.pi
-    frac, _ = np.modf(cycles)
-    ys = amp * np.sign(unbias(frac))
-    if taper: ys = apodize(ys)
-    return ys.astype(np.float32)
+    ts = np.arange(FR * duration) / FR 
+    wave = amp * sc.sin(w(freq) * ts + offset)
+    return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
-def generate_sawtooth(freq=440, duration=1.0, start=0, offset=0, amp=1.0, taper=True):
-    ts = start + np.arange(fr * duration) / fr
-    cycles = freq * ts + offset / 2*np.pi
-    frac, _ = np.modf(cycles)
-    ys = normalize(unbias(frac), amp)
-    if taper: ys = apodize(ys)
-    return ys.astype(np.float32)
+def square(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+    """Returns a sine wave, tapering if needed"""
+    amp = max(0, min(1.0, amp)) / 10  # square is harsh so let's reduce amp
+    s = sine(freq, amp, duration, offset)
+    wave = amp * np.sign(s)
+    return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
+
+def triangle(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+    """Returns a sine wave, tapering if needed"""
+    amp = max(0, min(1.0, amp))
+    s = sine(freq, amp, duration, offset)
+    wave = (2 / np.pi) * sc.arcsin(s)
+    return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
+
+def sawtooth(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+    """Returns a sawtooth wave, tapering if needed"""
+    amp = max(0, min(1.0, amp)) / 10
+    ts = np.arange(FR * duration) / FR 
+    # wave = (2 / np.pi) * ((freq * np.pi * np.fmod(ts, 1/freq) + offset) - (np.pi / 2))
+    # can simplify further to...
+    wave = 2 * (freq * np.fmod(ts, 1/freq) + offset) - 1.0
+    return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
+
+def ucnoise(duration, amp=1.0, waveFormat=np.float32):
+    """Uncorrelated noise"""
+    ts = np.arange(FR * duration) / FR 
+    wave = normalize(np.random.uniform(-amp, amp, len(ts)), amp)
+    return taper_wave(wave,FR).astype(waveFormat)
+
+def bnoise(duration, amp=1.0, waveFormat=np.float32):
+    """Brownian noise"""
+    ts = np.arange(FR * duration) / FR 
+    dys = np.random.uniform(-1, 1, len(ts))
+    wave = normalize(np.cumsum(dys) - 1, amp)
+    return taper_wave(wave,FR).astype(waveFormat)
+
+def wnoise(duration, amp=1.0, waveFormat=np.float32):
+    """White noise"""
+    ts = np.arange(FR * duration) / FR 
+    wave = normalize(np.random.normal(0, amp, len(ts)), amp)
+    return taper_wave(wave, FR).astype(waveFormat)
 
 def get_wave(wave_shape, freq, duration, amp=1.0, taper=True):
     if wave_shape == "triangle":
-        wave = generate_triangle(freq=freq, duration=duration, amp=amp, taper=taper)
+        wave = triangle(freq=freq, duration=duration, amp=amp, taper=taper)
     elif wave_shape == "sine":
-        wave = generate_sine(freq=freq, duration=duration, amp=amp, taper=taper)
+        wave = sine(freq=freq, duration=duration, amp=amp, taper=taper)
     elif wave_shape == "square":
-        wave = generate_square(freq=freq, duration=duration, amp=amp, taper=taper)
+        wave = square(freq=freq, duration=duration, amp=amp, taper=taper)
     elif wave_shape == "sawtooth":
-        wave = generate_sawtooth(freq=freq, duration=duration, amp=amp, taper=taper)
+        wave = sawtooth(freq=freq, duration=duration, amp=amp, taper=taper)
     return wave
 
 def callback(in_data, frame_count, time_info, status):
@@ -141,7 +137,7 @@ def scale(root, formula, time, mode=False):
     freqs = [root * (A) ** h for h in scales[formula]]
     # TODO create a function to compose waves more easily
     # testing composition of waves for each note in scale
-    return [generate_triangle(freq=f/2, duration=time, taper=True)+generate_sawtooth(freq=f, duration=time, amp=0.05, taper=True) for f in freqs]
+    return [triangle(freq=f/2, duration=time)+sawtooth(freq=f, duration=time, amp=0.05) for f in freqs]
 
 def major(root, formula, time, arp=False):
     # equation for frequency calculation using equal-tempered scale: 
@@ -150,68 +146,61 @@ def major(root, formula, time, arp=False):
     # generate the audio samples for each note and sum up for chord audio data
     # we need to normalize it to amp (for now just use default 1.0)
     if arp:
-        return [generate_triangle(freq=f, duration=time, taper=True) for f in freqs]
-    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
+        return [triangle(freq=f, duration=time, taper=True) for f in freqs]
+    return normalize(sum([triangle(freq=f, duration=time) for f in freqs]))
 
 def minor(root, formula, time, arp=False):
     freqs = [root * (A) ** h for h in MINOR_FORMULA[formula]]
     if arp:
-        return [generate_triangle(freq=f, duration=time) for f in freqs]
-    return normalize(sum([generate_triangle(freq=f, duration=time) for f in freqs]))
+        return [triangle(freq=f, duration=time) for f in freqs]
+    return normalize(sum([triangle(freq=f, duration=time) for f in freqs]))
 
 def dominant(root, formula, time, arp=False, taper=False):
     freqs = [root * (A) ** h for h in DOMINANT_FORMULA[formula]]
     if arp:
-        return [generate_triangle(freq=f, duration=time, taper=taper) for f in freqs]
-    return normalize(sum([generate_triangle(freq=f, duration=time, taper=taper) for f in freqs]))
+        return [triangle(freq=f, duration=time, taper=taper) for f in freqs]
+    return normalize(sum([triangle(freq=f, duration=time, taper=taper) for f in freqs]))
 
 def convolve_iir(data, iir):
-    a = read("IMreverbs/"+iir)
+    a = read("../IMreverbs/"+iir)
     impulse_response = np.array(a[1], dtype=float)[:, 0]
-    convolved = normalize(fftconvolve(data, impulse_response)).astype(np.float32)
+    convolved = normalize(fftconvolve(data, impulse_response)).astype(np.int16)
     return convolved
 
 def write_wave(file_path, wave):
-    wavfile.write(file_path, fr, wave)
+    wavfile.write(file_path, FR, wave)
 
-def get_stream(callback=None, num_channels=1, chan_map=()):
+def get_stream(callback=None, paformat=pyaudio.paFloat32, num_channels=1, chan_map=(), framerate=44100):
     if callback is not None:
-        return p.open(format=pyaudio.paFloat32,
+        return p.open(format=paformat,
                     channels=num_channels,
-                    rate=fr,
+                    rate=framerate,
                     # input=True,
                     output=True,
                     stream_callback=callback)
-    return p.open(format=pyaudio.paFloat32,
+    return p.open(format=paformat,
                     channels=num_channels,
-                    rate=fr,
+                    rate=framerate,
                     # input=True,
                     output=True)
 
 def clean_up():
     p.terminate()
 
-def combine(a, b):
-    c = np.zeros(max(len(a), len(b)))
-    if len(a) < len(b):
-        c = b.copy()
-        c[:len(a)] += a
-    else:
-        c = a.copy()
-        c[:len(b)] += b
-    return c
-
+# stream = get_stream()
+# w = sine(freq=1000)
+# stream.write(w.tobytes())
 
 # simple waves
-# sine_wave = generate_sine(freq=200)
+# sine_wave = sine(freq=200)
 # callback.wave = sine_wave
 # callback.wave = triangle_wave
 # callback.wave = square_wave
 
 # combinations
 
-# triangle_wave = generate_triangle(freq=200)
-# square_wave = generate_square(freq=40)
+# triangle_wave = triangle(freq=200)
+# square_wave = square(freq=40)
 # callback.wave = sine_wave + square_wave
 # callback.wave = sine_wave + triangle_wave
 # callback.wave = triangle_wave + square_wave
@@ -247,32 +236,4 @@ def combine(a, b):
 #                 rate=fr,
 # #                 # input=True,
 #                 output=True)
-
-# TODO experiment with simultaneous press?
-# # playing with keyboard events; for now it makes it easy to debug sounds
-# from pynput import keyboard
-
-# def on_press(key):    
-#     try:
-#         print('alphanumeric key {0} pressed'.format(
-#             key.char))
-#         if key.char == 'q':
-#             clean_up()
-#             sys.exit(0)
-#         elif (key.char.upper()+'0') in TABLE:
-#             note = key.char.upper()+'3'
-#             chord = major(TABLE[note], 'maj6', 0.2)
-#             note = sine_table
-#             stream.write(chord.tobytes())
-#     except AttributeError:
-#         pass
- 
-# def on_release(key):
-#     print('Key {} released.'.format(key))
- 
-# with keyboard.Listener(
-#     on_press = on_press,
-#     on_release = on_release) as listener:
-#     listener.join()
-
 

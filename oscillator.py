@@ -1,9 +1,6 @@
 import threading
 from threading import Thread
-import audio
-from audio import \
-    generate_sine, generate_triangle, generate_sawtooth, generate_square
-from audio import get_stream
+from audio import get_stream, get_wave
 
 class Oscillator(threading.Thread):
     """Basic oscillator that runs on its own thread"""
@@ -12,7 +9,7 @@ class Oscillator(threading.Thread):
         Thread.__init__(self)
         print(self.getName(), freq)
         self.stream = get_stream()
-        self.wave = audio.get_wave(wave_shape, freq, duration, taper=False)
+        self.wave = get_wave(wave_shape, freq, duration, taper=False)
         self.running = False
 
     def generate(self):

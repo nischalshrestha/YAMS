@@ -6,18 +6,26 @@ import threading
 import pyaudio
 import audio
 import time
+import numpy as np
+
+FR = 44100
 
 class Play(threading.Thread):
 
-    def __init__(self, wave, silence=None):
+    def __init__(self, wave):
         threading.Thread.__init__(self)
-        # TODO don't hardcode duration of signal
+        self.stream = audio.get_stream()
         self.wave = wave
-        self.silence = silence
+        self.release = False
 
     def run(self):
-        s = audio.get_stream()
-        s.write(self.wave.tobytes())
-        s.write(self.silence.tobytes())
-        s.stop_stream()
-        s.close()
+        # sort of using a "table lookup"
+        t = 0
+        while not self.release:
+            self.stream.write(self.wave[t % len(self.wave)].astype(np.float32).tobytes())
+            t += 1
+        self.stream.stop_stream()
+        self.stream.close()
+    
+    def stop(self):
+        self.release = True
