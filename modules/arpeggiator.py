@@ -5,6 +5,7 @@ import audio
 import numpy as np
 from play import Play
 from pyaudio import paFloat32
+from utility import beats_to_sec
 
 # TODO Make a Base class Sequencer that will allow us to create many different
 # kinds of sequencers; perhaps Metronome is more of a base class
@@ -15,12 +16,12 @@ class Arpeggiator(threading.Thread):
     """
     Basic sequencer
     """
-    def __init__(self, time_keeper, beats, note_length, root, formula, \
+    def __init__(self, time_keeper, bpm, note_length, root, formula, \
                 tone='maj', scale=False, reverb=False, iir="Small Drum Room.wav"):
         Thread.__init__(self)
         self.stream = audio.get_stream(paformat=paFloat32)
         self.time_keeper = time_keeper
-        self.note_dur = note_length*beats
+        self.note_dur = beats_to_sec(note_length, bpm)
         self.silence = audio.silence(self.note_dur)
         self.reverb = reverb
         self.iir = iir
@@ -33,7 +34,7 @@ class Arpeggiator(threading.Thread):
             elif tone == 'dom':
                 self.steps = audio.dominant(root, formula, 0.05, arp=True)
         else:
-            self.steps = audio.scale(root, formula, 0.05, mode=True)
+            self.steps = audio.scale(root, formula, 0.5, mode=True)
         self.running = False
     
     def run(self):
@@ -48,6 +49,7 @@ class Arpeggiator(threading.Thread):
                 if self.reverb:
                     playit = Play(data)
                     playit.start()
+                    # self.stream.write(data.tobytes())
                     # self.stream.write(self.steps[pos])
                 else:
                     self.stream.write(self.steps[pos].tobytes())

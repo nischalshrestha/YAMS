@@ -10,6 +10,7 @@ from scipy import signal
 from scipy.io import wavfile
 from scipy.io.wavfile import read
 from scipy.signal import fftconvolve 
+import threading
 
 import time
 import sys
@@ -58,34 +59,56 @@ def taper_wave(wave, fr=FR, factor=20, duration=.1):
     amp = np.concatenate((beg, mid, end))
     return amp * wave
 
-def sine(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+def sine(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, \
+        lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, waveFormat=np.float32):
     """Returns a sine wave, tapering if needed"""
     amp = max(0, min(1.0, amp))
     ts = np.arange(FR * duration) / FR 
-    wave = amp * sc.sin(w(freq) * ts + offset)
+    phase = w(freq) * ts + lfo_amp * sc.sin(w(lfo_hz) * ts)
+    amps = normalize(amp + sc.sin(w(amp_lfo) * ts), amp)
+    # phase = phase * sc.sin(w(0.5) * ts) # phase modulation
+    wave = amps * sc.sin(phase)
     return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
-def square(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+def square(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, \
+        lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, waveFormat=np.float32):
     """Returns a sine wave, tapering if needed"""
-    amp = max(0, min(1.0, amp)) / 10  # square is harsh so let's reduce amp
-    s = sine(freq, amp, duration, offset)
-    wave = amp * np.sign(s)
+    amp = max(0, min(1.0, amp)) / 6  # square is harsh so let's reduce amp
+    ts = np.arange(FR * duration) / FR 
+    phase = w(freq) * ts + lfo_amp * sc.sin(w(lfo_hz) * ts)
+    amps = normalize(amp + sc.sin(w(amp_lfo) * ts), amp)
+    s = amps * sc.sin(phase)
+    wave = amps * np.sign(s)
     return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
-def triangle(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+def triangle(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, \
+            lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, waveFormat=np.float32):
     """Returns a sine wave, tapering if needed"""
     amp = max(0, min(1.0, amp))
-    s = sine(freq, amp, duration, offset)
+    ts = np.arange(FR * duration) / FR 
+    phase = w(freq) * ts + lfo_amp * sc.sin(w(lfo_hz) * ts)
+    amps = normalize(amp + sc.sin(w(amp_lfo) * ts), amp)
+    s = amps * sc.sin(phase)
     wave = (2 / np.pi) * sc.arcsin(s)
     return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
-def sawtooth(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, waveFormat=np.float32):
+def sawtooth(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, \
+            lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, analog=False, waveFormat=np.float32):
     """Returns a sawtooth wave, tapering if needed"""
-    amp = max(0, min(1.0, amp)) / 10
+    amp = max(0, min(1.0, amp)) / 6
     ts = np.arange(FR * duration) / FR 
-    # wave = (2 / np.pi) * ((freq * np.pi * np.fmod(ts, 1/freq) + offset) - (np.pi / 2))
-    # can simplify further to...
-    wave = 2 * (freq * np.fmod(ts, 1/freq) + offset) - 1.0
+    phase = w(freq) * ts + lfo_amp * sc.sin(w(lfo_hz) * ts)
+    amps = amp + sc.sin(w(amp_lfo) * ts)
+    if analog:
+         # analog way (sounds warmer but is slower to compute)
+        waves = []
+        for n in range(1, 51):
+            waves.append((sc.sin(phase * n)) / n)
+        wave = normalize(amps*sum(waves), amp)
+    else:
+        # modf way (doesn't sound as nice but faster to compute)
+        frac, _ = amps * np.modf(phase / TWOPI)
+        wave = frac - 1
     return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
 def ucnoise(duration, amp=1.0, waveFormat=np.float32):
@@ -118,17 +141,6 @@ def get_wave(wave_shape, freq, duration, amp=1.0, taper=True):
         wave = sawtooth(freq=freq, duration=duration, amp=amp, taper=taper)
     return wave
 
-def callback(in_data, frame_count, time_info, status):
-    end = callback.start_offset + frame_count
-    data = callback.wave[callback.start_offset:end]
-    callback.start_offset += frame_count
-    # let pyaudio continue calling this function until there's no more data
-    # to be read from wave
-    return data, pyaudio.paContinue
-
-callback.times = 0
-callback.start_offset = 0
-
 def silence(duration):
     return get_wave("triangle", 0, duration)
 
@@ -137,7 +149,8 @@ def scale(root, formula, time, mode=False):
     freqs = [root * (A) ** h for h in scales[formula]]
     # TODO create a function to compose waves more easily
     # testing composition of waves for each note in scale
-    return [triangle(freq=f/2, duration=time)+sawtooth(freq=f, duration=time, amp=0.05) for f in freqs]
+    return [triangle(freq=f, duration=time, lfo_amp=1.0, lfo_hz=5.0, taper=True) \
+        + sawtooth(freq=f, duration=time, amp=1.0, lfo_amp=1.0, lfo_hz=5.0, taper=True) for f in freqs]
 
 def major(root, formula, time, arp=False):
     # equation for frequency calculation using equal-tempered scale: 
@@ -146,7 +159,7 @@ def major(root, formula, time, arp=False):
     # generate the audio samples for each note and sum up for chord audio data
     # we need to normalize it to amp (for now just use default 1.0)
     if arp:
-        return [triangle(freq=f, duration=time, taper=True) for f in freqs]
+        return [triangle(freq=f, duration=time, taper=True, lfo_amp=1.0, lfo_hz=5.0) for f in freqs]
     return normalize(sum([triangle(freq=f, duration=time) for f in freqs]))
 
 def minor(root, formula, time, arp=False):
@@ -164,32 +177,57 @@ def dominant(root, formula, time, arp=False, taper=False):
 def convolve_iir(data, iir):
     a = read("../IMreverbs/"+iir)
     impulse_response = np.array(a[1], dtype=float)[:, 0]
-    convolved = normalize(fftconvolve(data, impulse_response)).astype(np.int16)
+    convolved = normalize(fftconvolve(data, impulse_response)).astype(np.float32)
     return convolved
 
 def write_wave(file_path, wave):
     wavfile.write(file_path, FR, wave)
 
-def get_stream(callback=None, paformat=pyaudio.paFloat32, num_channels=1, chan_map=(), framerate=44100):
+def get_stream(callback=None, paformat=pyaudio.paFloat32, num_channels=1, chan_map=(), framerate=44100, frame_size=1024):
     if callback is not None:
         return p.open(format=paformat,
                     channels=num_channels,
                     rate=framerate,
                     # input=True,
+                    frames_per_buffer=frame_size,
                     output=True,
                     stream_callback=callback)
     return p.open(format=paformat,
                     channels=num_channels,
                     rate=framerate,
+                    frames_per_buffer=frame_size,
                     # input=True,
                     output=True)
 
 def clean_up():
     p.terminate()
 
-# stream = get_stream()
-# w = sine(freq=1000)
-# stream.write(w.tobytes())
+# stream = get_stream(frame_size=1024)
+# duration = 1.0
+# table = sine(duration=duration)
+# # stream.write(table.tobytes())
+
+# index = 0
+# vecsize = 64
+# output = np.zeros(vecsize)
+
+# def oscil(amp, freq, length=vecsize, fr=44100):
+#     global output, table, index 
+#     incr = freq*length/fr
+#     for i in range(vecsize):
+#         # truncated lookup
+#         # print(table[int(index)])
+#         output[i] = amp * table[int(index)]
+#         index += incr
+#         while index >= length: index -= length
+#         while index < 0: index += length
+#     return output
+
+# dur = int(duration*44100/vecsize) # duration in control samples
+# for i in range(dur):
+#     stream.write(oscil(0.5, 440).astype(np.float32).tostring())
+# print(len(output))
+
 
 # simple waves
 # sine_wave = sine(freq=200)

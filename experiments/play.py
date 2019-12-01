@@ -20,10 +20,11 @@ class Play(threading.Thread):
 
     def run(self):
         # sort of using a "table lookup"
-        t = 0
-        while not self.release:
-            self.stream.write(self.wave[t % len(self.wave)].astype(np.float32).tobytes())
-            t += 1
+        # t = 0
+        # while not self.release:
+        #     self.stream.write(self.wave[t % len(self.wave)].astype(np.float32).tobytes())
+        #     t += 1
+        self.stream.write(self.wave.astype(np.float32).tobytes())
         self.stream.stop_stream()
         self.stream.close()
     

@@ -1,13 +1,10 @@
-"""
-This contains useful functions
-"""
-
-from constants import *
+import scipy as sc
+import numpy as np
 from numpy.fft import fft
 from numpy.fft import fftfreq
 from numpy.fft import ifft
 
-def high_pass(ys, cutoff, factor=0, framerate=44100):
+def high_pass(ys, cutoff, factor=0.1, framerate=44100, duration=1.0):
     """
     Attenuate frequencies below the cutoff.
 
@@ -26,7 +23,7 @@ def high_pass(ys, cutoff, factor=0, framerate=44100):
     new_ys = ifft(hs)
     return new_ys
 
-def low_pass(ys, cutoff, factor=0, framerate=44100):
+def low_pass(ys, cutoff, factor=0.1, framerate=44100, duration=1.0):
     """
     Attenuate frequencies above the cutoff.
 
@@ -44,7 +41,7 @@ def low_pass(ys, cutoff, factor=0, framerate=44100):
     new_ys = ifft(hs)
     return new_ys
 
-def band_filter(ys, lcutoff, hcutoff, factor=0, framerate=44100, stop=False):
+def band_filter(ys, lcutoff, hcutoff, factor=0.1, framerate=44100, stop=False):
     """
     Attenuates depending on whether one wants to band pass or stop
     1) Pass: Attenuate frequencies below and above the low and high cutoff frequencies
@@ -67,41 +64,15 @@ def band_filter(ys, lcutoff, hcutoff, factor=0, framerate=44100, stop=False):
     new_ys = ifft(hs)
     return new_ys
 
-def combine(a, b):
-    """
-    Combaines two Python lists into a numpy array
+def butter_low(wave, cutoff, N=2, fr=44100):
+    b, a = sc.signal.butter(N, cutoff, fs=fr)
+    return sc.signal.filtfilt(b, a, wave)
 
-    a -- first list
-    b -- second list
-    """
-    c = np.zeros(max(len(a), len(b)))
-    if len(a) < len(b):
-        c = b.copy()
-        c[:len(a)] += a
-    else:
-        c = a.copy()
-        c[:len(b)] += b
-    return c
+def butter_high(wave, cutoff, N=2, fr=44100):
+    b, a = sc.signal.butter(N, cutoff, btype='high', fs=fr)
+    return sc.signal.filtfilt(b, a, wave)
 
-def beats_to_sec(b=QUARTER, bpm=60):
-    """
-    Seconds per beat
-    
-    b -- a single quarter note or another note length
-    """
-    # 1/BPM -> minutes / beat
-    # (minutes / beat) * 60 -> seconds / beat
-    return b * (1/bpm) * 60.0
-
-
-def beats_to_samples(b=QUARTER, bpm=60, fr=44100):
-    """
-    Seconds per beat
-    
-    b -- a single quarter note or another note length
-    """
-    # 1/BPM -> minutes / beat
-    # (minutes / beat) * 60 -> seconds / beat
-    # 
-    return beats_to_sec(b, bpm) * fr
+def butter_band(wave, lowcutoff, highcutoff, N=2, fr=44100):
+    b, a = sc.signal.butter(N, [lowcutoff, highcutoff], btype='band', fs=fr)
+    return sc.signal.filtfilt(b, a, wave)
 

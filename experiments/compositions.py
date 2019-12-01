@@ -50,11 +50,11 @@ def blast_off(play=False):
     print('Successfully written to', WAVE_OUTPUT_FILENAME, ':)')
 
 # blast_off(play=True)
-# sound = get_wave("triangle", 220, duration=0.15)
+sound = get_wave("triangle", 220, duration=0.1)
 # stream.write(sound.tobytes())
 
-# mt = Metronome(get_time_keeper(), bpm(120), SIXTEENTH, sound=sound)
-# mt.start()
+mt = Metronome(get_time_keeper(), 120, SIXTEENTH, sound=sound)
+mt.start()
 
 def write_modes(file, play=False, iir="Rays.wav"):
     """Example of writing a series of notes to a file in some tempo"""
@@ -164,7 +164,7 @@ def write_modes(file, play=False, iir="Rays.wav"):
 # arp3 = Arpeggiator(time_keeper, bpm(180), EIGHTH, 220, 'majadd9', tone='maj', reverb=True)
 # arp3.start()
 # time.sleep(HALF*bpm(180)*4)
-# arp4 = Arpeggiator(time_keeper, bpm(60), EIGHTH, 440, 'aeolian', scale=True, reverb=True, iir="St Nicolaes Church.wav")
+# arp4 = Arpeggiator(time_keeper, 160, EIGHTH, 440, 'aeolian', scale=True, reverb=False, iir="Nice Drum Room.wav")
 # arp4.start()
 # time.sleep(WHOLE*bpm(180)*8)
 # arp.stop()

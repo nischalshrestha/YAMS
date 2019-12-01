@@ -101,29 +101,44 @@ EQUIVALENTS = {
     # 'Ab': 'G#',
     # 'Bb': 'A#',
 }
+
+def key_note_list(key, scale):
+    """Gives back a note list for a given key and scale"""
+    # get the scale and cutoff the octave (12) interval
+    major_columns = [MODES[scale][i] for i in range(8)][:-1]
+    # get the notelist for the particular key
+    key_idx = SHARP_NOTES.index(key)
+    note_list = np.array(SHARP_NOTES[key_idx:] + SHARP_NOTES[:key_idx])
+    return note_list[major_columns]
+
 # Frequency table stuff
 BASE = 440
 A = 2**(1/12)
 
-def halfsteps_from_to(note_list, a, b):
-    """Returns distance in number of half steps from note a to b"""
-    a_idx = note_list.index(a)
-    b_idx = note_list.index(b)
-    return (b_idx - a_idx)
-
-def init_frequency_table():
-    """Initializes a frequency table for all notes for 8 octaves"""
-    frequency_table = {}
+def construct_note_list():
+    """Gives back a notelist for all octaves (for e.g. C0-C8)"""
     note_list = []
     for i in range(9):
         # for semi tones like C # or Db we'll go with the sharp representation
         # tone can play either format
         for n in SHARP_NOTES:
             note_list.append(n+str(i))
+    return note_list
+NOTELIST = construct_note_list()
+
+def halfsteps_from_to(note_list, a, b):
+    """Returns distance in number of half steps from note a to b"""
+    a_idx = NOTELIST.index(a)
+    b_idx = NOTELIST.index(b)
+    return (b_idx - a_idx)
+
+def init_frequency_table():
+    """Initializes a frequency table for all notes for 8 octaves"""
+    frequency_table = {}
     f_0 = BASE; # we'll chose A4 as f0
-    for i in range(len(note_list)):
-        f = f_0 * A ** halfsteps_from_to(note_list, "A4", note_list[i])
-        frequency_table[note_list[i]] = round(f, 2)
+    for i in range(len(NOTELIST)):
+        f = f_0 * A ** halfsteps_from_to(NOTELIST, "A4", NOTELIST[i])
+        frequency_table[NOTELIST[i]] = round(f, 2)
     return frequency_table
 TABLE = init_frequency_table()
 
