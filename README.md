@@ -23,5 +23,6 @@ For the Python dependencies, refer to [requirements.txt](./requirements.txt)
 # Future work
 
 - Coming up with a solid timing engine for musical timings, beats etc.
+- A DSL for audio synthesis / composition
 - An interpreter mode which is a precursor to a GUI mode
 - A GUI mode that abstracts the underlying API
