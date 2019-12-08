@@ -14,11 +14,21 @@ I've come up with an initial folder schema, but here's what you should know in t
 
 # Dependencies 
 
-Python 3.6 is used. You'll need portaudio v. 19.6.0 before installing pyaudio:
+Python 3.6 is used. You'll need portaudio v. 19.6.0 before installing the Python dependencies:
 
-`brew install portaudio`
+Mac: `brew install portaudio`
 
-For the Python dependencies, refer to [requirements.txt](./requirements.txt)
+Linux: 
+
+- `sudo apt-get install libasound-dev` (binds portaudio and pyaudio)
+- `tar xvfz [portaudiofile.tgz]` in the directory where `libasound-dev` lives (`/usr/lib`)
+- `./configure` inside the portaudio folder (the ALSA should say yes now in output)
+- `make`, `make install` and `ldconfig` (makes the so file available)
+- `export LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib` 
+
+More [here](https://medium.com/@niveditha.itengineer/learn-how-to-setup-portaudio-and-pyaudio-in-ubuntu-to-play-with-speech-recognition-8d2fff660e94)
+
+Then, `pip install -r requirements.txt`
 
 # Future work
 

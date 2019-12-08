@@ -202,76 +202,9 @@ def get_stream(callback=None, paformat=pyaudio.paFloat32, num_channels=1, chan_m
 def clean_up():
     p.terminate()
 
-# stream = get_stream(frame_size=1024)
-# duration = 1.0
-# table = sine(duration=duration)
-# # stream.write(table.tobytes())
 
-# index = 0
-# vecsize = 64
-# output = np.zeros(vecsize)
-
-# def oscil(amp, freq, length=vecsize, fr=44100):
-#     global output, table, index 
-#     incr = freq*length/fr
-#     for i in range(vecsize):
-#         # truncated lookup
-#         # print(table[int(index)])
-#         output[i] = amp * table[int(index)]
-#         index += incr
-#         while index >= length: index -= length
-#         while index < 0: index += length
-#     return output
-
-# dur = int(duration*44100/vecsize) # duration in control samples
-# for i in range(dur):
-#     stream.write(oscil(0.5, 440).astype(np.float32).tostring())
-# print(len(output))
-
-
-# simple waves
-# sine_wave = sine(freq=200)
-# callback.wave = sine_wave
-# callback.wave = triangle_wave
-# callback.wave = square_wave
-
-# combinations
-
-# triangle_wave = triangle(freq=200)
-# square_wave = square(freq=40)
-# callback.wave = sine_wave + square_wave
-# callback.wave = sine_wave + triangle_wave
-# callback.wave = triangle_wave + square_wave
-
-# chords; testing lower pitch of A4 for now
-# callback.wave = major(440/2, 'maj7/6')
-
-# non-blocking
-# stream = p.open(format=pyaudio.paFloat32,
-#                 channels=1,
-#                 rate=fr,
-#                 # input=True,
-#                 output=True,
-#                 stream_callback=callback)
-# start the stream
-# from constants import *
-# # wait for stream to finish because the audio playing is non-blocking
-# while True:
-#     # stream = get_stream(callback=callback)
-#     # stream.start_stream()
-#     time.sleep(0.1)
-#     callback.start_offset = 0 
-#     callback.times = 0
-#     stream = get_stream(callback=callback)
-#     stream.start_stream()
-
-# blocking version
-# the tobytes() is required due to pyaudio conversion of numpy	    
-# https://stackoverflow.com/a/48454913/9193847
-# for paFloat32 sample values must be in range [-1.0, 1.0]
-# stream = p.open(format=pyaudio.paFloat32,
-#                 channels=1,
-#                 rate=fr,
-# #                 # input=True,
-#                 output=True)
-
+if __name__ == '__main__':
+    stream = get_stream(frame_size=1024)
+    duration = 1.0
+    table = sine(duration=duration)
+    stream.write(table.tobytes())
