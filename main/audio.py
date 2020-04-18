@@ -203,6 +203,7 @@ def get_stream(callback=None, paformat=pyaudio.paFloat32, num_channels=1, chan_m
 def clean_up():
     p.terminate()
 
+<<<<<<< HEAD
 def simple_square(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, \
         lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, waveFormat=np.float32):
     """Returns a sine wave, tapering if needed"""
@@ -280,3 +281,11 @@ class SquareIterator:
 
 sine_iter = SineIterator(1.0, 1024)
 square_iter = SquareIterator(1.0, 1024)
+=======
+
+if __name__ == '__main__':
+    stream = get_stream(frame_size=1024)
+    duration = 1.0
+    table = sine(duration=duration)
+    stream.write(table.tobytes())
+>>>>>>> fbfa1c703c6b1b2927f96d40b7ba399b3a56f933
