@@ -15,6 +15,7 @@ import threading
 import time
 import sys
 from constants import *
+from utility import *
 
 # TODO add encapsulation with use of classes once different wave shapes
 # can be generated
@@ -202,76 +203,80 @@ def get_stream(callback=None, paformat=pyaudio.paFloat32, num_channels=1, chan_m
 def clean_up():
     p.terminate()
 
-# stream = get_stream(frame_size=1024)
-# duration = 1.0
-# table = sine(duration=duration)
-# # stream.write(table.tobytes())
+def simple_square(freq=440, amp=1.0, duration=1.0, offset=0, taper=False, \
+        lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, waveFormat=np.float32):
+    """Returns a sine wave, tapering if needed"""
+    amp = max(0, min(1.0, amp)) / 6  # square is harsh so let's reduce amp
+    ts = np.arange(FR * duration) / FR 
+    phase = w(freq) * ts + lfo_amp * sc.sin(w(lfo_hz) * ts)
+    amps = normalize(amp + sc.sin(w(amp_lfo) * ts), amp)
+    s = amps * sc.sin(phase)
+    wave = amps * np.sign(s)
+    return wave.astype(waveFormat)
+    # return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
-# index = 0
-# vecsize = 64
-# output = np.zeros(vecsize)
+def simple_sine(freq=440, amp=1.0, duration=1.0, offset=0, taper=True, \
+        lfo_hz=0.0, lfo_amp=0.0, amp_lfo=0.0, waveFormat=np.float32):
+    """Returns a sine wave, tapering if needed"""
+    amp = max(0, min(1.0, amp))
+    ts = np.arange(FR * duration) / FR 
+    phase = w(freq) * ts
+    # phase = w(freq) * ts + lfo_amp * sc.sin(w(lfo_hz) * ts)
+    # amps = normalize(amp + sc.sin(w(amp_lfo) * ts), amp)
+    # phase = phase * sc.sin(w(1.0) * ts) # phase modulation
+    wave = amp * sc.sin(phase)
+    # return wave.astype(waveFormat)
+    return taper_wave(wave, FR).astype(waveFormat) if taper else wave.astype(waveFormat)
 
-# def oscil(amp, freq, length=vecsize, fr=44100):
-#     global output, table, index 
-#     incr = freq*length/fr
-#     for i in range(vecsize):
-#         # truncated lookup
-#         # print(table[int(index)])
-#         output[i] = amp * table[int(index)]
-#         index += incr
-#         while index >= length: index -= length
-#         while index < 0: index += length
-#     return output
+class SineIterator:
+    """UNSTABLE class which may get removed"""
+    cur_frame = 0
 
-# dur = int(duration*44100/vecsize) # duration in control samples
-# for i in range(dur):
-#     stream.write(oscil(0.5, 440).astype(np.float32).tostring())
-# print(len(output))
+    def __init__(self, duration, frames):
+        s = simple_sine(duration=duration)
+        self.s = s
+        ts = np.arange(FR * duration) / FR
+        total_frames = len(ts) // frames
+        extra = len(ts) % frames
+        # print(f"total samples for 44.1KHz 1 second: {len(ts)}")
+        # print(f"total 1024-sized frames for 1s: {total_frames*frames}") 
+        # print(f"Remaining samples: {extra}")
+        # for i in range(0, total_frames*FRAMES, FRAMES):
+        #     print(i, s[i:i+FRAMES])
+        self.wave = [s[i:i+frames] for i in range(0, total_frames*frames, frames)]
+        self.wave.append(s[-extra:])
 
+    def get_next_frame(self):
+        if self.cur_frame < len(self.wave):
+            to_rtn = self.wave[self.cur_frame]  
+            self.cur_frame += 1
+            return to_rtn
+        return []
 
-# simple waves
-# sine_wave = sine(freq=200)
-# callback.wave = sine_wave
-# callback.wave = triangle_wave
-# callback.wave = square_wave
+class SquareIterator:
 
-# combinations
+    cur_frame = 0
 
-# triangle_wave = triangle(freq=200)
-# square_wave = square(freq=40)
-# callback.wave = sine_wave + square_wave
-# callback.wave = sine_wave + triangle_wave
-# callback.wave = triangle_wave + square_wave
+    def __init__(self, duration, frames):
+        s = simple_square(duration=duration)
+        self.s = s
+        ts = np.arange(FR * duration) / FR
+        total_frames = len(ts) // frames
+        extra = len(ts) % frames
+        # print(f"total samples for 44.1KHz 1 second: {len(ts)}")
+        # print(f"total 1024-sized frames for 1s: {total_frames*frames}") 
+        # print(f"Remaining samples: {extra}")
+        # for i in range(0, total_frames*FRAMES, FRAMES):
+        #     print(i, s[i:i+FRAMES])
+        self.wave = [s[i:i+frames] for i in range(0, total_frames*frames, frames)]
+        self.wave.append(s[-extra:])
 
-# chords; testing lower pitch of A4 for now
-# callback.wave = major(440/2, 'maj7/6')
+    def get_next_frame(self):
+        if self.cur_frame < len(self.wave):
+            to_rtn = self.wave[self.cur_frame]  
+            self.cur_frame += 1
+            return to_rtn
+        return []
 
-# non-blocking
-# stream = p.open(format=pyaudio.paFloat32,
-#                 channels=1,
-#                 rate=fr,
-#                 # input=True,
-#                 output=True,
-#                 stream_callback=callback)
-# start the stream
-# from constants import *
-# # wait for stream to finish because the audio playing is non-blocking
-# while True:
-#     # stream = get_stream(callback=callback)
-#     # stream.start_stream()
-#     time.sleep(0.1)
-#     callback.start_offset = 0 
-#     callback.times = 0
-#     stream = get_stream(callback=callback)
-#     stream.start_stream()
-
-# blocking version
-# the tobytes() is required due to pyaudio conversion of numpy	    
-# https://stackoverflow.com/a/48454913/9193847
-# for paFloat32 sample values must be in range [-1.0, 1.0]
-# stream = p.open(format=pyaudio.paFloat32,
-#                 channels=1,
-#                 rate=fr,
-# #                 # input=True,
-#                 output=True)
-
+sine_iter = SineIterator(1.0, 1024)
+square_iter = SquareIterator(1.0, 1024)

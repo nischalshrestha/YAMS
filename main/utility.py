@@ -11,7 +11,7 @@ from numpy.fft import ifft
 
 def combine(a, b):
     """
-    Combaines two Python lists into a numpy array
+    Combines two Python lists into a numpy array
 
     a -- first list
     b -- second list
